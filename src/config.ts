@@ -196,7 +196,7 @@ export const CHARACTER_SETS: CharacterSets = {
  * Ensures deterministic behavior and prevents algorithm drift
  */
 export const ALGORITHM_VERSION: AlgorithmVersion = {
-  version: '0.0.0',
+  version: '1.0.0',
   hashAlgorithm: 'SHA-512',
   encoding: 'UTF-8',
   jsNumberPrecision: 'IEEE-754',
