@@ -1,12 +1,92 @@
 {
-  "name": "nuwault-core",
+  "name": "@nuwa-x/nuwault-core",
   "version": "0.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "description": "Advanced password generation library with character diversity optimization, repetition control, and balanced distribution for maximum security",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md"
+  ],
+  "scripts": {
+    "build": "tsc && rollup -c",
+    "build:tsc": "tsc",
+    "build:rollup": "rollup -c",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "type-check": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.{js,ts}\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.{js,ts}\"",
+    "clean": "rm -rf dist",
+    "version-sync": "node scripts/version-sync.cjs",
+    "version-check": "node scripts/version-sync.cjs",
+    "prepublishOnly": "npm run version-check && npm run clean && npm run build && npm run test",
+    "validate": "npm run type-check && npm run test && npm run version-check",
+    "release": "npm run validate && npm run build"
+  },
+  "keywords": [
+    "password",
+    "generator",
+    "security",
+    "deterministic",
+    "hash",
+    "crypto",
+    "privacy",
+    "typescript",
+    "character-diversity",
+    "repetition-control",
+    "balanced-distribution",
+    "entropy",
+    "password-analysis",
+    "secure-generation",
+    "diversity-optimization",
+    "cryptographic-hash",
+    "password-strength",
+    "deterministic-generation"
+  ],
+  "author": "NuwaX",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nuwa-x/nuwault-core.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nuwa-x/nuwault-core/issues"
+  },
+  "homepage": "https://nuwault.com",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@types/node": "^24.0.6",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.4.2",
+    "rollup": "^4.44.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
 }
