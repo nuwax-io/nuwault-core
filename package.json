@@ -1,6 +1,6 @@
 {
   "name": "@nuwax-io/nuwault-core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Advanced password generation library with character diversity optimization, repetition control, and balanced distribution for maximum security",
   "main": "dist/index.js",
   "module": "dist/index.js",
