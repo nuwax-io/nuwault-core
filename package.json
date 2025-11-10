@@ -1,5 +1,5 @@
 {
-  "name": "@nuwa-x/nuwault-core",
+  "name": "@nuwax-io/nuwault-core",
   "version": "1.0.0",
   "description": "Advanced password generation library with character diversity optimization, repetition control, and balanced distribution for maximum security",
   "main": "dist/index.js",
@@ -68,10 +68,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nuwa-x/nuwault-core.git"
+    "url": "https://github.com/nuwax-io/nuwault-core.git"
   },
   "bugs": {
-    "url": "https://github.com/nuwa-x/nuwault-core/issues"
+    "url": "https://github.com/nuwax-io/nuwault-core/issues"
   },
   "homepage": "https://nuwault.com",
   "devDependencies": {

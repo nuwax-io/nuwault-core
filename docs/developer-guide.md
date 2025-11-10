@@ -5,7 +5,7 @@
 The main class provides a convenient wrapper around all password generation functions.
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore(customConfig);
 ```
@@ -282,7 +282,7 @@ import {
   isDevelopment,
   isProduction,
   mergeConfig
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 ```
 
 ### Core Functions Reference
@@ -348,7 +348,7 @@ Convert a cryptographic hash to a password with specified character distribution
 
 **Examples:**
 ```javascript
-import { hashToPassword } from '@nuwa-x/nuwault-core';
+import { hashToPassword } from '@nuwax-io/nuwault-core';
 
 // Standard password generation from cryptographic hash
 const hash = 'a1b2c3d4e5f6...'; // 128-character SHA-512 hash from generateHash()
@@ -425,7 +425,7 @@ Perform comprehensive algorithm compatibility validation across all components.
 
 **Examples:**
 ```javascript
-import { validateAlgorithmCompatibility } from '@nuwa-x/nuwault-core';
+import { validateAlgorithmCompatibility } from '@nuwax-io/nuwault-core';
 
 const validation = await validateAlgorithmCompatibility();
 
@@ -477,7 +477,7 @@ Fast algorithm compatibility check using a single test vector from each componen
 
 **Examples:**
 ```javascript
-import { quickCompatibilityCheck } from '@nuwa-x/nuwault-core';
+import { quickCompatibilityCheck } from '@nuwax-io/nuwault-core';
 
 // Production health monitoring endpoint
 app.get('/health/algorithm', async (req, res) => {
@@ -522,7 +522,7 @@ Comprehensive validation of the complete algorithm stack including hash generati
 
 **Examples:**
 ```javascript
-import { validateFullAlgorithm } from '@nuwa-x/nuwault-core';
+import { validateFullAlgorithm } from '@nuwax-io/nuwault-core';
 
 // CI/CD pipeline validation
 const validation = await validateFullAlgorithm();
@@ -572,7 +572,7 @@ Get comprehensive algorithm version information and feature list.
 
 **Examples:**
 ```javascript
-import { getAlgorithmVersion } from '@nuwa-x/nuwault-core';
+import { getAlgorithmVersion } from '@nuwax-io/nuwault-core';
 
 const versionInfo = getAlgorithmVersion();
 

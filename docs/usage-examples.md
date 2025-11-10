@@ -3,7 +3,7 @@
 ## Basic Password Generation
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore();
 
@@ -24,7 +24,7 @@ const customPassword = await generator.generatePassword(
 ## Input Validation Examples
 
 ```javascript
-import { generatePassword } from '@nuwa-x/nuwault-core';
+import { generatePassword } from '@nuwax-io/nuwault-core';
 
 // ✅ Valid input patterns for password generation
 await generatePassword(['github.com', 'user@email.com']); // Valid: domain and identifier
@@ -45,7 +45,7 @@ await generatePassword(['test'], { length: 200 }); // Error: Length must be 8-12
 ## Advanced Configuration
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore({
   SECURITY_CONFIG: {
@@ -72,7 +72,7 @@ Master salt can be used in **two different ways**. Choose the method that best f
 **Best for:** Consistent salt across all password generations in an application
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 // Configure global master salt for consistent application-wide password generation
 const generator = new NuwaultCore({
@@ -91,7 +91,7 @@ const password2 = await generator.generatePassword(['github.com', 'user2']);
 **Best for:** Dynamic salt values or different salts for different operations
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore(); // No global salt configuration
 
@@ -111,7 +111,7 @@ const adminPassword = await generator.generatePassword(
 **Best for:** Default salt with occasional overrides
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 // Configure default master salt in constructor
 const generator = new NuwaultCore({
@@ -180,7 +180,7 @@ const generator = new NuwaultCore({
 ## Password Analysis and Quality Assessment
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore();
 
@@ -227,7 +227,7 @@ console.log(`Overall Quality Rating: ${analysis.distribution}`);
 ## Character Diversity Analysis Examples
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore();
 
@@ -295,7 +295,7 @@ await analyzePasswordQuality(['secure-site.com', 'admin'], { length: 64 });
 ## Advanced Hash Generation
 
 ```javascript
-import { generateHash, normalizeInput } from '@nuwa-x/nuwault-core';
+import { generateHash, normalizeInput } from '@nuwax-io/nuwault-core';
 
 // Direct cryptographic hash generation
 const inputs = ['GitHub.COM', '  user@EMAIL.com  ', 'Master-Key'];
@@ -317,7 +317,7 @@ console.log(`Hashes match: ${hash === hash2}`); // true
 ## Error Handling Best Practices
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore();
 
@@ -377,7 +377,7 @@ import {
   validateFullAlgorithm,
   getAlgorithmVersion,
   ALGORITHM_TEST_VECTORS
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 
 // Example 1: Production-Ready Health Check
 async function performHealthCheck() {
@@ -566,7 +566,7 @@ import {
   validateAlgorithmCompatibility,
   quickCompatibilityCheck,
   ALGORITHM_VERSION 
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 
 // Example 1: Comprehensive Library Health and Version Check
 async function checkLibraryHealth() {
@@ -805,7 +805,7 @@ async function runVersionManagementExamples() {
 import NuwaultCore, { 
   validateAlgorithmCompatibility,
   getAlgorithmVersion 
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 
 // Enterprise-grade password manager class for organizational use
 class EnterprisePasswordManager {

@@ -1,15 +1,8 @@
-# @nuwa-x/nuwault-core
-
-[![npm version](https://img.shields.io/npm/v/@nuwa-x/nuwault-core.svg?style=flat-square)](https://www.npmjs.com/package/@nuwa-x/nuwault-core)
-[![npm downloads](https://img.shields.io/npm/dt/@nuwa-x/nuwault-core.svg?style=flat-square)](https://www.npmjs.com/package/@nuwa-x/nuwault-core)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@nuwa-x/nuwault-core?style=flat-square)](https://bundlephobia.com/package/@nuwa-x/nuwault-core)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen?style=flat-square&logo=node.js)](https://nodejs.org/)
 [![Test Coverage](https://img.shields.io/badge/coverage-vitest-green.svg?style=flat-square&logo=vitest)](https://vitest.dev/)
 [![Security](https://img.shields.io/badge/Security-SHA--512-red.svg?style=flat-square&logo=security)](SECURITY.md)
-[![Code Quality](https://img.shields.io/badge/Code%20Quality-TypeScript%20Strict-blue.svg?style=flat-square)](tsconfig.json)
-[![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg?style=flat-square)](package.json)
 
 > **Nuwault Core** - Enterprise-grade deterministic password generation library built with TypeScript. Transform your memorable keywords into cryptographically secure passwords with guaranteed consistency across all platforms and devices. Featuring advanced character diversity algorithms, repetition control, and balanced distribution for maximum security without compromising usability.
 
@@ -82,7 +75,7 @@
 ## Installation
 
 ```bash
-npm install @nuwa-x/nuwault-core
+npm install @nuwax-io/nuwault-core
 ```
 
 ## Quick Start
@@ -90,7 +83,7 @@ npm install @nuwa-x/nuwault-core
 ### Using the Main Class (Recommended)
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore();
 
@@ -109,7 +102,7 @@ const password = await generator.generatePassword(
 console.log('Generated password:', password);
 
 // Check algorithm health and version
-import { getAlgorithmVersion, quickCompatibilityCheck } from '@nuwa-x/nuwault-core';
+import { getAlgorithmVersion, quickCompatibilityCheck } from '@nuwax-io/nuwault-core';
 
 const version = getAlgorithmVersion();
 const isHealthy = await quickCompatibilityCheck();
@@ -121,7 +114,7 @@ console.log(`Library status: ${isHealthy ? 'Healthy ✅' : 'Issues detected ❌'
 ### Using Individual Functions
 
 ```javascript
-import { generatePassword, analyzeCharacterDistribution } from '@nuwa-x/nuwault-core';
+import { generatePassword, analyzeCharacterDistribution } from '@nuwax-io/nuwault-core';
 
 // Generate password
 const password = await generatePassword(
@@ -148,7 +141,7 @@ For detailed documentation on using the library, including comprehensive API ref
 ### Quick Class Reference
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 // Create generator
 const generator = new NuwaultCore(customConfig);
@@ -180,7 +173,7 @@ import {
   getAlgorithmVersion,
   SECURITY_CONFIG,
   CHARACTER_SETS
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 ```
 
 **[Complete API Documentation](docs/developer-guide.md)**
@@ -190,7 +183,7 @@ import {
 You can customize the security settings by providing a custom configuration:
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore({
   SECURITY_CONFIG: {
@@ -253,7 +246,7 @@ The library uses sophisticated algorithms to ensure balanced character distribut
 The library includes comprehensive validation systems to ensure algorithm consistency across different environments, platforms, and library versions.
 
 ```javascript
-import { validateAlgorithmCompatibility, getAlgorithmVersion } from '@nuwa-x/nuwault-core';
+import { validateAlgorithmCompatibility, getAlgorithmVersion } from '@nuwax-io/nuwault-core';
 
 // Algorithm version tracking
 const versionInfo = getAlgorithmVersion();
@@ -305,7 +298,7 @@ The library is designed for enterprise production environments with comprehensiv
 ### Quick Setup
 ```javascript
 // Health check endpoint
-import { quickCompatibilityCheck } from '@nuwa-x/nuwault-core';
+import { quickCompatibilityCheck } from '@nuwax-io/nuwault-core';
 
 app.get('/health/algorithm', async (req, res) => {
   const isHealthy = await quickCompatibilityCheck();
@@ -325,7 +318,7 @@ const enterpriseGenerator = new NuwaultCore({
 });
 
 // Deployment validation
-import { validateAlgorithmCompatibility } from '@nuwa-x/nuwault-core';
+import { validateAlgorithmCompatibility } from '@nuwax-io/nuwault-core';
 const validation = await validateAlgorithmCompatibility();
 if (!validation.overall.isFullyCompatible) {
   throw new Error('Deployment validation failed');
@@ -356,12 +349,12 @@ Full TypeScript support included with comprehensive type definitions and intelli
 ### Quick TypeScript Example
 
 ```typescript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 import type { 
   PasswordGenerationResult, 
   CompatibilityResult,
   AlgorithmVersion 
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 
 // Type-safe password generation
 const generator = new NuwaultCore();
@@ -388,7 +381,7 @@ For comprehensive usage examples, including advanced configurations, enterprise 
 ### Quick Examples
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 // Basic usage
 const generator = new NuwaultCore();
@@ -417,7 +410,7 @@ const analysis = generator.analyzePassword(password);
 console.log(`Password quality: ${analysis.distribution}`);
 
 // Algorithm validation
-import { quickCompatibilityCheck, getAlgorithmVersion } from '@nuwa-x/nuwault-core';
+import { quickCompatibilityCheck, getAlgorithmVersion } from '@nuwax-io/nuwault-core';
 
 const isHealthy = await quickCompatibilityCheck();
 const version = getAlgorithmVersion();
@@ -462,7 +455,7 @@ For security vulnerabilities, please:
 For general inquiries, technical support, or feedback, please reach out to us:
 
 - **Support Email**: [support@nuwault.com](mailto:support@nuwault.com)
-- **GitHub Issues**: [Report bugs or request features](https://github.com/nuwa-x/nuwault-core/issues)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/nuwax-io/nuwault-core/issues)
 - **Documentation**: [Complete documentation and guides](docs/)
 
 We welcome your feedback and are committed to helping you get the most out of Nuwault Core.

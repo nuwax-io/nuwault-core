@@ -7,7 +7,7 @@ Enterprise-grade deployment capabilities designed for large-scale production env
 Implement real-time algorithm health monitoring for production environments:
 
 ```javascript
-import { quickCompatibilityCheck } from '@nuwa-x/nuwault-core';
+import { quickCompatibilityCheck } from '@nuwax-io/nuwault-core';
 
 // Production-grade health check endpoint with comprehensive monitoring
 app.get('/health/algorithm', async (req, res) => {
@@ -43,7 +43,7 @@ Comprehensive post-deployment algorithm integrity validation framework:
 
 ```javascript
 // deployment-validation.js
-import { validateAlgorithmCompatibility } from '@nuwa-x/nuwault-core';
+import { validateAlgorithmCompatibility } from '@nuwax-io/nuwault-core';
 
 async function validateDeployment() {
   console.log('🔍 Executing post-deployment algorithm compatibility validation...');
@@ -76,7 +76,7 @@ validateDeployment().then(isValid => {
 Production-grade algorithm performance monitoring and metrics collection:
 
 ```javascript
-import { PasswordGenerator } from '@nuwa-x/nuwault-core';
+import { PasswordGenerator } from '@nuwax-io/nuwault-core';
 
 async function monitorPerformance() {
   const startTime = Date.now();
@@ -113,7 +113,7 @@ async function monitorPerformance() {
 Enterprise-grade security configuration for large-scale organizational deployment:
 
 ```javascript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 
 // Enterprise security configuration with enhanced parameters
 const enterpriseGenerator = new NuwaultCore({
@@ -156,7 +156,7 @@ Enterprise monitoring system integration with comprehensive metrics collection:
 
 ```javascript
 // enterprise-monitoring-integration.js
-import { validateAlgorithmCompatibility, getAlgorithmVersion } from '@nuwa-x/nuwault-core';
+import { validateAlgorithmCompatibility, getAlgorithmVersion } from '@nuwax-io/nuwault-core';
 
 async function collectMetrics() {
   const [validation, version] = await Promise.all([

@@ -13,7 +13,7 @@ import {
   quickCompatibilityCheck,
   validateFullAlgorithm,
   getAlgorithmVersion
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 
 import type { 
   PasswordGenerationOptions, 
@@ -25,7 +25,7 @@ import type {
   PasswordTestResult,
   AlgorithmVersion,
   TestVector
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 ```
 
 ## Interface Definitions
@@ -142,8 +142,8 @@ interface AlgorithmVersion {
 ### Basic Password Generation with Types
 
 ```typescript
-import NuwaultCore from '@nuwa-x/nuwault-core';
-import type { PasswordGenerationResult, PasswordGenerationOptions } from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
+import type { PasswordGenerationResult, PasswordGenerationOptions } from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore();
 
@@ -176,12 +176,12 @@ import {
   quickCompatibilityCheck,
   validateFullAlgorithm,
   getAlgorithmVersion 
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 import type { 
   CompatibilityResult, 
   AlgorithmVersion,
   TestVectorResult 
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 
 // Type-safe algorithm validation with comprehensive error handling
 async function validateWithTypeScript(): Promise<void> {
@@ -213,12 +213,12 @@ async function validateWithTypeScript(): Promise<void> {
 ### Enterprise Configuration with Types
 
 ```typescript
-import NuwaultCore from '@nuwa-x/nuwault-core';
+import NuwaultCore from '@nuwax-io/nuwault-core';
 import type { 
   SecurityConfig, 
   CharacterSets,
   PasswordGenerationResult 
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 
 // Type-safe enterprise configuration interface for production deployment
 interface EnterpriseConfig {
@@ -263,7 +263,7 @@ import type {
   PasswordAnalysisResult,
   HashResult,
   CharacterDiversityMetadata 
-} from '@nuwa-x/nuwault-core';
+} from '@nuwax-io/nuwault-core';
 
 // Type-safe password analysis with comprehensive metadata extraction
 async function analyzePasswordWithTypes(
@@ -288,7 +288,7 @@ async function analyzePasswordWithTypes(
 
 // Type-safe cryptographic hash generation with SHA-512
 async function generateHashWithTypes(inputs: string[]): Promise<HashResult> {
-  const { generateHash } = await import('@nuwa-x/nuwault-core');
+  const { generateHash } = await import('@nuwax-io/nuwault-core');
   const hash: string = await generateHash(inputs);
   
   return {
@@ -382,7 +382,7 @@ async function safePasswordGeneration(inputs: string[]): Promise<PasswordGenerat
 
 ### tsconfig.json
 
-Enterprise-grade TypeScript configuration for projects using @nuwa-x/nuwault-core:
+Enterprise-grade TypeScript configuration for projects using @nuwax-io/nuwault-core:
 
 ```json
 {
@@ -436,10 +436,10 @@ export {};
 
 ```typescript
 // ✅ Enterprise Best Practice: Use type-only imports for interface definitions
-import type { PasswordGenerationOptions } from '@nuwa-x/nuwault-core';
+import type { PasswordGenerationOptions } from '@nuwax-io/nuwault-core';
 
 // ❌ Avoid: Mixing value and type imports unnecessarily
-import { PasswordGenerationOptions } from '@nuwa-x/nuwault-core';
+import { PasswordGenerationOptions } from '@nuwax-io/nuwault-core';
 ```
 
 ### 2. Leverage Strict Mode
@@ -493,7 +493,7 @@ type PasswordGenerationResponse = {
 1. **Module Resolution Issues**
    ```typescript
    // Solution: Use explicit module imports for NuwaultCore components
-   import { generatePassword } from '@nuwa-x/nuwault-core';
+   import { generatePassword } from '@nuwax-io/nuwault-core';
    ```
 
 2. **Type Declaration Missing**
