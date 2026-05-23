@@ -84,22 +84,18 @@ export class HashGenerator {
     
     for (let i = 0; i < iterations; i++) {
       const saltComponents: string[] = [];
-      
+
       if (effectiveMasterSalt) {
         saltComponents.push(effectiveMasterSalt);
       }
-      
+
       saltComponents.push(`iter-${i}`, normalizedInputs, currentHash);
       const iterationSalt = saltComponents.join('|');
-      
+
       const data = encoder.encode(iterationSalt);
       const hashBuffer = await crypto.subtle.digest(SECURITY_CONFIG.hashAlgorithm, data);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       currentHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-      
-      if (i === 0) {
-        await new Promise(resolve => setTimeout(resolve, 1));
-      }
     }
     
     return {
@@ -212,13 +208,16 @@ export class HashGenerator {
     if (!Array.isArray(inputs) || inputs.length === 0) {
       throw new Error('Inputs must be a non-empty array');
     }
-    
-    return inputs.filter(input => {
-      if (typeof input !== 'string') {
-        return false;
-      }
-      return input.trim().length > 0;
-    });
+
+    const filtered = inputs.filter(
+      input => typeof input === 'string' && input.trim().length > 0
+    );
+
+    if (filtered.length === 0) {
+      throw new Error('Inputs must contain at least one non-empty string');
+    }
+
+    return filtered;
   }
   
   /**
