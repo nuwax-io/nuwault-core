@@ -330,7 +330,7 @@ export class PasswordGenerator {
    * @param options - Character type inclusion options
    * @returns Generated password with specified length and optimized distribution
    */
-  private static hashToPassword(hash: string, length: number, options: PasswordOptions): string {
+  static hashToPassword(hash: string, length: number, options: PasswordOptions): string {
     const { includeUppercase, includeLowercase, includeNumbers, includeSymbols } = options;
     
     const activeSets: CharacterSet[] = [];
@@ -683,11 +683,11 @@ export class PasswordGenerator {
    */
   private static normalizeOptions(options: PasswordGenerationOptions): Required<PasswordGenerationOptions> {
     return {
-      keywords: options.keywords || [],
-      length: options.length || SECURITY_CONFIG.defaultPasswordLength,
+      keywords: options.keywords ?? [],
+      length: options.length ?? SECURITY_CONFIG.defaultPasswordLength,
       options: { ...DEFAULT_PASSWORD_OPTIONS, ...options.options },
-      masterSalt: options.masterSalt || SECURITY_CONFIG.masterSalt,
-      iterations: options.iterations || SECURITY_CONFIG.hashIterations
+      masterSalt: options.masterSalt ?? SECURITY_CONFIG.masterSalt,
+      iterations: options.iterations ?? SECURITY_CONFIG.hashIterations
     };
   }
 
