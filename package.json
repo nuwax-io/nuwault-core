@@ -39,7 +39,8 @@
     "version-check": "node scripts/version-sync.cjs",
     "prepublishOnly": "npm run version-check && npm run clean && npm run build && npm run test",
     "validate": "npm run type-check && npm run test && npm run version-check",
-    "release": "npm run validate && npm run build"
+    "release": "npm run validate && npm run build",
+    "verify:algorithm": "node scripts/verify-algorithm.js"
   },
   "keywords": [
     "password",
