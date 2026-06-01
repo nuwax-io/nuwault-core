@@ -28,7 +28,17 @@ Creates a new password generator instance with optional custom configuration.
       - **Effect:** When provided, adds an extra layer of security to hash generation
       - **Behavior:** Salt is included in every hash iteration for enhanced uniqueness
       - **Use Case:** Useful for creating organization-specific or user-specific password variants
-  - `CHARACTER_SETS` (object): Custom character sets
+  - `CHARACTER_SETS` (object): Custom character pools for password generation
+    - `UPPERCASE` (string): Uppercase letters (default: `'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`)
+    - `LOWERCASE` (string): Lowercase letters (default: `'abcdefghijklmnopqrstuvwxyz'`)
+    - `NUMBERS` (string): Numeric digits (default: `'0123456789'`)
+    - `SYMBOLS` (string): Symbol characters (default: `'!@#$%^&*()_+-=[]{}|;:,.<>?'`)
+  - `PASSWORD_DISTRIBUTION_CONFIG` (object): Character distribution ratios by password length
+    - `long.threshold` (number): Minimum length for the long strategy (default: `64`)
+    - `long.distribution`: Ratios for long passwords — `{ uppercase: 0.20, lowercase: 0.35, numbers: 0.20, symbols: 0.25 }`
+    - `medium.threshold` (number): Minimum length for the medium strategy (default: `32`)
+    - `medium.distribution`: Ratios for medium passwords — `{ uppercase: 0.25, lowercase: 0.35, numbers: 0.20, symbols: 0.20 }`
+    - Passwords shorter than `medium.threshold` always use equal distribution
   - `DEFAULT_PASSWORD_OPTIONS` (object): Default password options
 
 **Examples:**
@@ -52,7 +62,12 @@ const advancedGenerator = new NuwaultCore({
     masterSalt: 'organization-wide-cryptographic-salt'
   },
   CHARACTER_SETS: {
-    SYMBOLS: '!@#$%^&*'  // Custom symbol character set
+    SYMBOLS: '!@#$%^&*'  // Restrict symbol pool to 8 characters
+  },
+  PASSWORD_DISTRIBUTION_CONFIG: {
+    long:   { threshold: 64, distribution: { uppercase: 0.15, lowercase: 0.40, numbers: 0.20, symbols: 0.25 } },
+    medium: { threshold: 32, distribution: { uppercase: 0.20, lowercase: 0.40, numbers: 0.20, symbols: 0.20 } },
+    short:  { distribution: 'equal' }
   }
 });
 ```
@@ -221,9 +236,28 @@ import {
 
 ### Core Functions Reference
 
-**`generatePassword(inputs, options?)`**
+**`generatePassword(inputs, options?)`** — Legacy API
 
-Standalone password generation function (same as class method).
+Generates a password from a keyword array and returns `Promise<string>`. Same behaviour as `NuwaultCore.generatePassword()`.
+
+**`generatePassword(options)`** — Object API
+
+Generates a password via `PasswordGenerator.generatePassword()` and returns `Promise<PasswordGenerationResult>` with full metadata. Accepts the complete `PasswordGenerationOptions` interface, including the two per-call overrides added in the latest release:
+
+- `characterSets` (`CharacterSets`, optional): Override the character pools for this call only. Falls back to the module-level `CHARACTER_SETS` constant.
+- `distributionConfig` (`PasswordDistributionConfig`, optional): Override the length-based distribution ratios for this call only. Falls back to the module-level `PASSWORD_DISTRIBUTION_CONFIG` constant.
+
+```javascript
+import { generatePassword } from '@nuwax-io/nuwault-core';
+
+// Per-call character set override (object API)
+const result = await generatePassword({
+  keywords: ['github.com', 'user@email.com'],
+  length: 24,
+  characterSets: { SYMBOLS: '!@#$%^&*' },
+});
+console.log(result.password);
+```
 
 **`generateHash(inputs, masterSalt?)`**
 

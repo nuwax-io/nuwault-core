@@ -142,30 +142,48 @@ interface AlgorithmVersion {
 ### Basic Password Generation with Types
 
 ```typescript
-import NuwaultCore from '@nuwax-io/nuwault-core';
-import type { PasswordGenerationResult, PasswordGenerationOptions } from '@nuwax-io/nuwault-core';
+import { PasswordGenerator } from '@nuwax-io/nuwault-core';
+import type {
+  PasswordGenerationOptions,
+  PasswordGenerationResult,
+  CharacterSets,
+  PasswordDistributionConfig,
+} from '@nuwax-io/nuwault-core';
 
-const generator = new NuwaultCore();
-
-// Type-safe password generation with comprehensive options
+// PasswordGenerationOptions is the input type for PasswordGenerator.generatePassword()
 const options: PasswordGenerationOptions = {
+  keywords: ['github.com', 'username'],
   length: 32,
-  includeUppercase: true,
-  includeLowercase: true,
-  includeNumbers: true,
-  includeSymbols: true,
-  masterSalt: 'enterprise-salt'
+  options: {
+    includeUppercase: true,
+    includeLowercase: true,
+    includeNumbers: true,
+    includeSymbols: true,
+  },
+  masterSalt: 'enterprise-salt',
+
+  // Per-call character set override (optional)
+  characterSets: {
+    UPPERCASE: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    LOWERCASE: 'abcdefghijklmnopqrstuvwxyz',
+    NUMBERS: '0123456789',
+    SYMBOLS: '!@#$%^&*',  // Restrict symbol pool
+  } satisfies CharacterSets,
+
+  // Per-call distribution override (optional)
+  distributionConfig: {
+    long:   { threshold: 64, distribution: { uppercase: 0.20, lowercase: 0.35, numbers: 0.20, symbols: 0.25 } },
+    medium: { threshold: 32, distribution: { uppercase: 0.25, lowercase: 0.35, numbers: 0.20, symbols: 0.20 } },
+    short:  { distribution: 'equal' },
+  } satisfies PasswordDistributionConfig,
 };
 
-const result: PasswordGenerationResult = await generator.generatePassword(
-  ['github.com', 'username'], 
-  options
-);
+// PasswordGenerator.generatePassword returns Promise<PasswordGenerationResult>
+const result: PasswordGenerationResult = await PasswordGenerator.generatePassword(options);
 
-// TypeScript provides comprehensive intellisense and strict type validation
 console.log(`Generated password: ${result.password}`);
-console.log(`Character diversity metrics: ${result.metadata.characterDiversity.totalUniqueCharacters}/${result.length}`);
-console.log(`Algorithm execution time: ${result.metadata.generationTime}ms`);
+console.log(`Unique chars: ${result.metadata.characterDiversity.totalUniqueCharacters}/${result.length}`);
+console.log(`Generation time: ${result.metadata.generationTime}ms`);
 ```
 
 ### Algorithm Validation with Types

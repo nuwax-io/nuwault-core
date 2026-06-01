@@ -183,14 +183,18 @@ import NuwaultCore from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore({
   SECURITY_CONFIG: {
-    hashIterations: 2000,        // More iterations = more secure but slower
-    defaultPasswordLength: 32,   // Default password length
-    minPasswordLength: 8,        // Minimum allowed length
-    maxPasswordLength: 128,      // Maximum allowed length
+    hashIterations: 2000,          // More iterations = more secure but slower
+    defaultPasswordLength: 32,     // Default password length when none specified
     masterSalt: 'your-custom-salt' // Optional master salt (null = no salt)
+    // Note: minPasswordLength / maxPasswordLength are enforced at 8 / 128 and cannot be overridden
   },
   CHARACTER_SETS: {
-    SYMBOLS: '!@#$%^&*'         // Custom symbol set
+    SYMBOLS: '!@#$%^&*'           // Restrict symbol pool to these 8 characters
+  },
+  PASSWORD_DISTRIBUTION_CONFIG: {
+    long:   { threshold: 64, distribution: { uppercase: 0.20, lowercase: 0.35, numbers: 0.20, symbols: 0.25 } },
+    medium: { threshold: 32, distribution: { uppercase: 0.25, lowercase: 0.35, numbers: 0.20, symbols: 0.20 } },
+    short:  { distribution: 'equal' }
   }
 });
 ```
