@@ -138,7 +138,7 @@ export const SECURITY_CONFIG: SecurityConfig = {
   defaultPasswordLength: 16,
   hashAlgorithm: 'SHA-512',
   hashIterations: 1000,
-  masterSalt: null
+  masterSalt: null,
 };
 
 /**
@@ -149,7 +149,7 @@ export const DEFAULT_PASSWORD_OPTIONS: DefaultPasswordOptions = {
   includeUppercase: true,
   includeLowercase: true,
   includeNumbers: true,
-  includeSymbols: true
+  includeSymbols: true,
 };
 
 /**
@@ -160,24 +160,24 @@ export const PASSWORD_DISTRIBUTION_CONFIG: PasswordDistributionConfig = {
   long: {
     threshold: 64,
     distribution: {
-      uppercase: 0.20,
+      uppercase: 0.2,
       lowercase: 0.35,
-      numbers: 0.20,
-      symbols: 0.25
-    }
+      numbers: 0.2,
+      symbols: 0.25,
+    },
   },
   medium: {
     threshold: 32,
     distribution: {
       uppercase: 0.25,
       lowercase: 0.35,
-      numbers: 0.20,
-      symbols: 0.20
-    }
+      numbers: 0.2,
+      symbols: 0.2,
+    },
   },
   short: {
-    distribution: 'equal'
-  }
+    distribution: 'equal',
+  },
 };
 
 /**
@@ -188,7 +188,7 @@ export const CHARACTER_SETS: CharacterSets = {
   UPPERCASE: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
   LOWERCASE: 'abcdefghijklmnopqrstuvwxyz',
   NUMBERS: '0123456789',
-  SYMBOLS: '!@#$%^&*()_+-=[]{}|;:,.<>?'
+  SYMBOLS: '!@#$%^&*()_+-=[]{}|;:,.<>?',
 };
 
 /**
@@ -200,7 +200,7 @@ export const ALGORITHM_VERSION: AlgorithmVersion = {
   hashAlgorithm: 'SHA-512',
   encoding: 'UTF-8',
   jsNumberPrecision: 'IEEE-754',
-  shuffleAlgorithm: 'Fisher-Yates'
+  shuffleAlgorithm: 'Fisher-Yates',
 };
 
 /**
@@ -219,12 +219,12 @@ export const ALGORITHM_TEST_VECTORS: readonly TestVector[] = [
       characterDiversity: {
         totalUniqueCharacters: 14,
         maxRepetitions: 2,
-        diversityRatio: 0.875
-      }
+        diversityRatio: 0.875,
+      },
     },
     environment: {
-      timestamp: 1704067200000 // 2024-01-01
-    }
+      timestamp: 1704067200000, // 2024-01-01
+    },
   },
   {
     input: {
@@ -237,12 +237,12 @@ export const ALGORITHM_TEST_VECTORS: readonly TestVector[] = [
       characterDiversity: {
         totalUniqueCharacters: 15,
         maxRepetitions: 2,
-        diversityRatio: 0.938
-      }
+        diversityRatio: 0.938,
+      },
     },
     environment: {
-      timestamp: 1704067200000
-    }
+      timestamp: 1704067200000,
+    },
   },
   {
     input: {
@@ -255,13 +255,13 @@ export const ALGORITHM_TEST_VECTORS: readonly TestVector[] = [
       characterDiversity: {
         totalUniqueCharacters: 24,
         maxRepetitions: 3,
-        diversityRatio: 0.750
-      }
+        diversityRatio: 0.75,
+      },
     },
     environment: {
-      timestamp: 1704067200000
-    }
-  }
+      timestamp: 1704067200000,
+    },
+  },
 ] as const;
 
 /**
@@ -272,8 +272,14 @@ export const ALGORITHM_TEST_VECTORS: readonly TestVector[] = [
 export const mergeConfig = (customConfig: CustomConfig = {}): MergedConfig => {
   return {
     SECURITY_CONFIG: { ...SECURITY_CONFIG, ...customConfig.SECURITY_CONFIG },
-    DEFAULT_PASSWORD_OPTIONS: { ...DEFAULT_PASSWORD_OPTIONS, ...customConfig.DEFAULT_PASSWORD_OPTIONS },
+    DEFAULT_PASSWORD_OPTIONS: {
+      ...DEFAULT_PASSWORD_OPTIONS,
+      ...customConfig.DEFAULT_PASSWORD_OPTIONS,
+    },
     CHARACTER_SETS: { ...CHARACTER_SETS, ...customConfig.CHARACTER_SETS },
-    PASSWORD_DISTRIBUTION_CONFIG: { ...PASSWORD_DISTRIBUTION_CONFIG, ...customConfig.PASSWORD_DISTRIBUTION_CONFIG }
+    PASSWORD_DISTRIBUTION_CONFIG: {
+      ...PASSWORD_DISTRIBUTION_CONFIG,
+      ...customConfig.PASSWORD_DISTRIBUTION_CONFIG,
+    },
   };
-}; 
+};
