@@ -21,11 +21,10 @@ import {
   mergeConfig,
   NuwaultCore,
   SECURITY_CONFIG,
-  ALGORITHM_TEST_VECTORS
+  ALGORITHM_TEST_VECTORS,
 } from '../dist/index.js';
 
 describe('Password Generator - TypeScript API', () => {
-
   describe('HashGenerator', () => {
     it('should generate consistent hash for same inputs', async () => {
       const options = { keywords: ['github.com', 'user@email.com'] };
@@ -40,7 +39,10 @@ describe('Password Generator - TypeScript API', () => {
     it('should generate different hashes with different masterSalt', async () => {
       const keywords = ['github.com', 'user@email.com'];
       const resultNoSalt = await HashGenerator.generateHash({ keywords });
-      const resultWithSalt = await HashGenerator.generateHash({ keywords, masterSalt: 'my-salt-2025' });
+      const resultWithSalt = await HashGenerator.generateHash({
+        keywords,
+        masterSalt: 'my-salt-2025',
+      });
 
       expect(resultNoSalt.hash).not.toBe(resultWithSalt.hash);
       expect(resultNoSalt.hash).toHaveLength(128);
@@ -54,13 +56,13 @@ describe('Password Generator - TypeScript API', () => {
     });
 
     it('should throw when all keywords are whitespace-only', async () => {
-      await expect(HashGenerator.generateHash({ keywords: ['', '   '] }))
-        .rejects.toThrow('at least one non-empty string');
+      await expect(HashGenerator.generateHash({ keywords: ['', '   '] })).rejects.toThrow(
+        'at least one non-empty string'
+      );
     });
 
     it('should throw when keywords array is empty', async () => {
-      await expect(HashGenerator.generateHash({ keywords: [] }))
-        .rejects.toThrow('non-empty array');
+      await expect(HashGenerator.generateHash({ keywords: [] })).rejects.toThrow('non-empty array');
     });
   });
 
@@ -72,10 +74,18 @@ describe('Password Generator - TypeScript API', () => {
     });
 
     it('should validate password options requirements', () => {
-      expect(InputValidator.validatePasswordOptions({ includeUppercase: true, includeLowercase: true }).isValid).toBe(true);
-      expect(InputValidator.validatePasswordOptions({
-        includeUppercase: false, includeLowercase: false, includeNumbers: false, includeSymbols: false
-      }).isValid).toBe(false);
+      expect(
+        InputValidator.validatePasswordOptions({ includeUppercase: true, includeLowercase: true })
+          .isValid
+      ).toBe(true);
+      expect(
+        InputValidator.validatePasswordOptions({
+          includeUppercase: false,
+          includeLowercase: false,
+          includeNumbers: false,
+          includeSymbols: false,
+        }).isValid
+      ).toBe(false);
     });
 
     it('should validate keywords array properly', () => {
@@ -103,22 +113,33 @@ describe('Password Generator - TypeScript API', () => {
     });
 
     it('should generate unique passwords for different inputs', async () => {
-      const result1 = await PasswordGenerator.generatePassword({ keywords: ['input1'], length: 16 });
-      const result2 = await PasswordGenerator.generatePassword({ keywords: ['input2'], length: 16 });
+      const result1 = await PasswordGenerator.generatePassword({
+        keywords: ['input1'],
+        length: 16,
+      });
+      const result2 = await PasswordGenerator.generatePassword({
+        keywords: ['input2'],
+        length: 16,
+      });
 
       expect(result1.password).not.toBe(result2.password);
     });
 
     it('should enforce password length constraints', async () => {
-      await expect(PasswordGenerator.generatePassword({ keywords: ['test'], length: 7 }))
-        .rejects.toThrow('Password length must be at least');
-      await expect(PasswordGenerator.generatePassword({ keywords: ['test'], length: 200 }))
-        .rejects.toThrow('Password length cannot exceed');
+      await expect(
+        PasswordGenerator.generatePassword({ keywords: ['test'], length: 7 })
+      ).rejects.toThrow('Password length must be at least');
+      await expect(
+        PasswordGenerator.generatePassword({ keywords: ['test'], length: 200 })
+      ).rejects.toThrow('Password length cannot exceed');
     });
 
     it('should generate passwords at minimum and maximum allowed lengths', async () => {
       const minResult = await PasswordGenerator.generatePassword({ keywords: ['test'], length: 8 });
-      const maxResult = await PasswordGenerator.generatePassword({ keywords: ['test'], length: 128 });
+      const maxResult = await PasswordGenerator.generatePassword({
+        keywords: ['test'],
+        length: 128,
+      });
 
       expect(minResult.password).toHaveLength(8);
       expect(maxResult.password).toHaveLength(128);
@@ -136,18 +157,27 @@ describe('Password Generator - TypeScript API', () => {
     it('should generate different passwords with master salt', async () => {
       const keywords = ['github.com', 'user@email.com'];
       const resultNoSalt = await PasswordGenerator.generatePassword({ keywords, length: 16 });
-      const resultWithSalt = await PasswordGenerator.generatePassword({ keywords, length: 16, masterSalt: 'my-salt-2025' });
+      const resultWithSalt = await PasswordGenerator.generatePassword({
+        keywords,
+        length: 16,
+        masterSalt: 'my-salt-2025',
+      });
 
       expect(resultNoSalt.password).not.toBe(resultWithSalt.password);
     });
 
     it('should validate generation options correctly', () => {
-      expect(PasswordGenerator.validateOptions({ keywords: ['test'], length: 16 }).isValid).toBe(true);
+      expect(PasswordGenerator.validateOptions({ keywords: ['test'], length: 16 }).isValid).toBe(
+        true
+      );
       expect(PasswordGenerator.validateOptions({ keywords: [], length: 16 }).isValid).toBe(false);
     });
 
     it('should provide character diversity metadata in generation results', async () => {
-      const result = await PasswordGenerator.generatePassword({ keywords: ['diversity-test'], length: 32 });
+      const result = await PasswordGenerator.generatePassword({
+        keywords: ['diversity-test'],
+        length: 32,
+      });
       const diversity = result.metadata.characterDiversity;
 
       expect(diversity).toHaveProperty('totalUniqueCharacters');
@@ -166,13 +196,13 @@ describe('Password Generator - TypeScript API', () => {
         { length: 16, expectedMaxRep: 2 },
         { length: 24, expectedMaxRep: 3 },
         { length: 32, expectedMaxRep: 4 },
-        { length: 64, expectedMaxRep: 6 }
+        { length: 64, expectedMaxRep: 6 },
       ];
 
       for (const { length, expectedMaxRep } of testCases) {
         const result = await PasswordGenerator.generatePassword({
           keywords: ['repetition-test', length.toString()],
-          length
+          length,
         });
         const diversity = result.metadata.characterDiversity;
 
@@ -182,14 +212,21 @@ describe('Password Generator - TypeScript API', () => {
     });
 
     it('should maintain character distribution across different password lengths', async () => {
-      const shortResult = await PasswordGenerator.generatePassword({ keywords: ['distribution-test'], length: 16 });
-      const longResult = await PasswordGenerator.generatePassword({ keywords: ['distribution-test'], length: 64 });
+      const shortResult = await PasswordGenerator.generatePassword({
+        keywords: ['distribution-test'],
+        length: 16,
+      });
+      const longResult = await PasswordGenerator.generatePassword({
+        keywords: ['distribution-test'],
+        length: 64,
+      });
 
       const shortDist = shortResult.metadata.characterDistribution;
       const longDist = longResult.metadata.characterDistribution;
 
-      expect(longResult.metadata.characterDiversity.totalUniqueCharacters)
-        .toBeGreaterThan(shortResult.metadata.characterDiversity.totalUniqueCharacters);
+      expect(longResult.metadata.characterDiversity.totalUniqueCharacters).toBeGreaterThan(
+        shortResult.metadata.characterDiversity.totalUniqueCharacters
+      );
 
       for (const dist of [shortDist, longDist]) {
         expect(dist.uppercase).toBeGreaterThan(0);
@@ -240,14 +277,16 @@ describe('Password Generator - TypeScript API', () => {
           keywords: vector.input.keywords,
           length: vector.input.length,
           options: vector.input.options,
-          masterSalt: vector.input.masterSalt
+          masterSalt: vector.input.masterSalt,
         });
 
         expect(result.password).toBe(vector.expectedOutput.password);
-        expect(result.metadata.characterDiversity.totalUniqueCharacters)
-          .toBe(vector.expectedOutput.characterDiversity.totalUniqueCharacters);
-        expect(result.metadata.characterDiversity.maxRepetitions)
-          .toBe(vector.expectedOutput.characterDiversity.maxRepetitions);
+        expect(result.metadata.characterDiversity.totalUniqueCharacters).toBe(
+          vector.expectedOutput.characterDiversity.totalUniqueCharacters
+        );
+        expect(result.metadata.characterDiversity.maxRepetitions).toBe(
+          vector.expectedOutput.characterDiversity.maxRepetitions
+        );
       }
     });
   });
@@ -298,11 +337,12 @@ describe('Password Generator - TypeScript API', () => {
       const weakPassword = 'aaaa1111!!!!bbbb';
       const analysis = PasswordAnalyzer.analyzePassword(weakPassword);
       const suggestionText = analysis.suggestions.join(' ').toLowerCase();
-      const hasDiversitySuggestion = suggestionText.includes('variety') ||
+      const hasDiversitySuggestion =
+        suggestionText.includes('variety') ||
         suggestionText.includes('diverse') ||
         suggestionText.includes('unique');
-      const hasRepetitionSuggestion = suggestionText.includes('repetition') ||
-        suggestionText.includes('repeated');
+      const hasRepetitionSuggestion =
+        suggestionText.includes('repetition') || suggestionText.includes('repeated');
 
       expect(analysis.suggestions.length).toBeGreaterThan(0);
       expect(hasDiversitySuggestion || hasRepetitionSuggestion).toBe(true);
@@ -334,14 +374,21 @@ describe('Password Generator - TypeScript API', () => {
     });
 
     it('should provide working analyzeCharacterDistribution function', async () => {
-      const { password } = await PasswordGenerator.generatePassword({ keywords: ['test'], length: 16 });
+      const { password } = await PasswordGenerator.generatePassword({
+        keywords: ['test'],
+        length: 16,
+      });
       const distribution = analyzeCharacterDistribution(password);
 
       expect(distribution).toHaveProperty('uppercase');
       expect(distribution).toHaveProperty('lowercase');
       expect(distribution).toHaveProperty('numbers');
       expect(distribution).toHaveProperty('symbols');
-      const total = distribution.uppercase + distribution.lowercase + distribution.numbers + distribution.symbols;
+      const total =
+        distribution.uppercase +
+        distribution.lowercase +
+        distribution.numbers +
+        distribution.symbols;
       expect(Math.round(total)).toBe(100);
     });
   });
@@ -437,8 +484,8 @@ describe('Password Generator - TypeScript API', () => {
           includeUppercase: true,
           includeLowercase: true,
           includeNumbers: false,
-          includeSymbols: false
-        }
+          includeSymbols: false,
+        },
       });
       const password = await core.generatePassword(['test'], { length: 16 });
       expect(/^[a-zA-Z]+$/.test(password)).toBe(true);
@@ -471,7 +518,9 @@ describe('Password Generator - TypeScript API', () => {
   describe('mergeConfig', () => {
     it('should return defaults when called with no arguments', () => {
       const config = mergeConfig();
-      expect(config.SECURITY_CONFIG.defaultPasswordLength).toBe(SECURITY_CONFIG.defaultPasswordLength);
+      expect(config.SECURITY_CONFIG.defaultPasswordLength).toBe(
+        SECURITY_CONFIG.defaultPasswordLength
+      );
       expect(config.DEFAULT_PASSWORD_OPTIONS.includeUppercase).toBe(true);
     });
 
@@ -492,5 +541,4 @@ describe('Password Generator - TypeScript API', () => {
       expect(SECURITY_CONFIG.defaultPasswordLength).toBe(16);
     });
   });
-
 });
