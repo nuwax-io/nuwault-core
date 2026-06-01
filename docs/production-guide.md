@@ -181,7 +181,7 @@ async function collectMetrics() {
 }
 
 // Export metrics collection interface for monitoring systems
-module.exports = { collectMetrics };
+export { collectMetrics };
 ```
 
 ## Version Synchronization & Management
@@ -241,52 +241,6 @@ npm test
 npm publish  # Executes prepublishOnly -> version-check
 ```
 
-### CI/CD Integration with Version Validation
-
-Enterprise CI/CD pipeline with comprehensive algorithm validation:
-
-```yaml
-# .github/workflows/algorithm-validation.yml
-name: Enterprise Algorithm Validation
-
-on: [push, pull_request]
-
-jobs:
-  validate-algorithm:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      
-      - name: Install production dependencies
-        run: npm ci
-        
-      - name: Execute version synchronization validation
-        run: npm run version-check
-        
-      - name: Execute library build validation
-        run: npm run build
-        
-      - name: Execute comprehensive validation suite
-        run: npm run validate  # Type validation + Test suite + Version validation
-        
-      - name: Execute algorithm compatibility validation
-        run: |
-          node -e "
-          import('./dist/index.js').then(async (module) => {
-            const { validateAlgorithmCompatibility } = module;
-            const validation = await validateAlgorithmCompatibility();
-            if (!validation.overall.isFullyCompatible) {
-              console.error('❌ Algorithm compatibility validation failed');
-              process.exit(1);
-            }
-            console.log('✅ Algorithm compatibility validation successful');
-          });
-          "
-```
-
 ### Production Deployment Checklist
 
 Pre-deployment validation checklist for production environments:
@@ -336,17 +290,24 @@ npm publish  # Or execute deployment pipeline
 Enterprise NPM script suite for comprehensive validation and deployment workflows:
 
 ```bash
+# Full CI pipeline (mirrors .github/workflows/ci.yml exactly)
+npm run ci                 # format:check + type-check + test + build + verify:algorithm
+
 # Core validation commands
 npm test                    # Execute complete test suite including algorithm validation
 npm run type-check          # TypeScript static type analysis
+npm run format:check        # Verify code formatting without modifying files
 npm run build              # Build compilation and artifact validation
 
 # Version management commands  
 npm run version-check       # Algorithm/package version synchronization validation
 npm run version-sync -- --fix  # Automated version mismatch resolution
 
+# Algorithm stability verification
+npm run verify:algorithm   # Compare live output against hardcoded test vectors
+
 # Comprehensive validation
-npm run validate           # type-check + test + version-check (enterprise recommended)
+npm run validate           # type-check + test + version-check
 
 # Production deployment workflows
 npm run prepublishOnly     # version-check + clean + build + test
@@ -356,11 +317,11 @@ npm run release            # validate + build (production deployment ready)
 #### Developer Validation Workflow
 
 ```bash
-# Daily development validation workflow
-npm run validate           # Comprehensive validation execution
+# Before opening a PR — run the full CI pipeline locally
+npm run ci                 # Catches format, type, test, build, and algorithm issues in one command
 
 # Pre-commit validation workflow
-npm run validate && git add . && git commit -m "feat: ..."
+npm run ci && git add . && git commit -m "feat: ..."
 
 # Pre-version update workflow
 npm run version-check      # Verify version synchronization status
@@ -376,7 +337,8 @@ npm run release           # Complete production readiness validation
 
 | Command | Purpose | Includes | Exit Code |
 |---------|---------|----------|-----------|
-| `npm test` | Run test suite | 28 tests + algorithm validation | 0 = success |
+| `npm run ci` | Full CI pipeline locally | format:check + type-check + test + build + verify:algorithm | 0 = all pass |
+| `npm test` | Run test suite | 54 tests + algorithm validation | 0 = success |
 | `npm run validate` | Comprehensive check | Type-check + Tests + Version sync | 0 = all pass |
 | `npm run version-check` | Version consistency | Algorithm ↔ Package.json sync | 0 = synchronized |
 | `npm run prepublishOnly` | Pre-publish validation | Version + Clean + Build + Test | 0 = ready to publish |
