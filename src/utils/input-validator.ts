@@ -31,7 +31,6 @@ export interface PasswordOptions {
  * Provides static methods for validating password generation parameters
  */
 export class InputValidator {
-  
   /**
    * Validate password length against security constraints
    * @param length - Password length to validate
@@ -41,21 +40,21 @@ export class InputValidator {
     if (typeof length !== 'number' || !Number.isInteger(length)) {
       return {
         isValid: false,
-        error: 'Password length must be a valid integer'
+        error: 'Password length must be a valid integer',
       };
     }
 
     if (length < SECURITY_CONFIG.minPasswordLength) {
       return {
         isValid: false,
-        error: `Password length must be at least ${SECURITY_CONFIG.minPasswordLength} characters`
+        error: `Password length must be at least ${SECURITY_CONFIG.minPasswordLength} characters`,
       };
     }
 
     if (length > SECURITY_CONFIG.maxPasswordLength) {
       return {
         isValid: false,
-        error: `Password length cannot exceed ${SECURITY_CONFIG.maxPasswordLength} characters`
+        error: `Password length cannot exceed ${SECURITY_CONFIG.maxPasswordLength} characters`,
       };
     }
 
@@ -71,13 +70,13 @@ export class InputValidator {
     if (!options || typeof options !== 'object') {
       return {
         isValid: false,
-        error: 'Password options must be a valid object'
+        error: 'Password options must be a valid object',
       };
     }
 
     const mergedOptions: DefaultPasswordOptions = {
       ...DEFAULT_PASSWORD_OPTIONS,
-      ...options
+      ...options,
     };
 
     const hasAtLeastOneType = Object.values(mergedOptions).some(value => value === true);
@@ -85,7 +84,7 @@ export class InputValidator {
     if (!hasAtLeastOneType) {
       return {
         isValid: false,
-        error: 'At least one character type must be enabled'
+        error: 'At least one character type must be enabled',
       };
     }
 
@@ -101,31 +100,31 @@ export class InputValidator {
     if (!Array.isArray(keywords)) {
       return {
         isValid: false,
-        error: 'Keywords must be an array'
+        error: 'Keywords must be an array',
       };
     }
 
     if (keywords.length === 0) {
       return {
         isValid: false,
-        error: 'At least one keyword is required'
+        error: 'At least one keyword is required',
       };
     }
 
     for (let i = 0; i < keywords.length; i++) {
       const keyword = keywords[i];
-      
+
       if (typeof keyword !== 'string') {
         return {
           isValid: false,
-          error: `Keyword at index ${i} must be a string`
+          error: `Keyword at index ${i} must be a string`,
         };
       }
 
       if (keyword.trim().length === 0) {
         return {
           isValid: false,
-          error: `Keyword at index ${i} cannot be empty or contain only whitespace`
+          error: `Keyword at index ${i} cannot be empty or contain only whitespace`,
         };
       }
     }
@@ -146,14 +145,14 @@ export class InputValidator {
     if (typeof masterSalt !== 'string') {
       return {
         isValid: false,
-        error: 'Master salt must be a string or null'
+        error: 'Master salt must be a string or null',
       };
     }
 
     if (masterSalt.length === 0) {
       return {
         isValid: false,
-        error: 'Master salt cannot be empty string (use null instead)'
+        error: 'Master salt cannot be empty string (use null instead)',
       };
     }
 
@@ -196,4 +195,4 @@ export class InputValidator {
 
     return { isValid: true };
   }
-} 
+}
