@@ -15,7 +15,7 @@ import {
 } from '../config.js';
 import type { HashOptions } from '../crypto/hash-generator.js';
 import type { PasswordOptions, ValidationResult } from '../utils/input-validator.js';
-import type { TestVector } from '../config.js';
+import type { TestVector, CharacterSets, PasswordDistributionConfig } from '../config.js';
 
 /**
  * Password generation options interface
@@ -27,6 +27,8 @@ export interface PasswordGenerationOptions {
   options?: PasswordOptions;
   masterSalt?: string | null;
   iterations?: number;
+  characterSets?: CharacterSets;
+  distributionConfig?: PasswordDistributionConfig;
 }
 
 /**
@@ -145,7 +147,9 @@ export class PasswordGenerator {
     const password = this.hashToPassword(
       hashResult.hash,
       normalizedOptions.length,
-      normalizedOptions.options
+      normalizedOptions.options,
+      normalizedOptions.characterSets,
+      normalizedOptions.distributionConfig
     );
 
     const characterDistribution = this.calculateActualDistribution(password);
@@ -336,29 +340,41 @@ export class PasswordGenerator {
    * @param hash - Hash string to convert
    * @param length - Desired password length
    * @param options - Character type inclusion options
+   * @param characterSets - Character pools to use (defaults to module-level CHARACTER_SETS)
+   * @param distributionConfig - Length-based distribution config (defaults to module-level PASSWORD_DISTRIBUTION_CONFIG)
    * @returns Generated password with specified length and optimized distribution
    */
-  static hashToPassword(hash: string, length: number, options: PasswordOptions): string {
+  static hashToPassword(
+    hash: string,
+    length: number,
+    options: PasswordOptions,
+    characterSets: CharacterSets = CHARACTER_SETS,
+    distributionConfig: PasswordDistributionConfig = PASSWORD_DISTRIBUTION_CONFIG
+  ): string {
     const { includeUppercase, includeLowercase, includeNumbers, includeSymbols } = options;
 
     const activeSets: CharacterSet[] = [];
-    if (includeUppercase) activeSets.push({ chars: CHARACTER_SETS.UPPERCASE, type: 'uppercase' });
-    if (includeLowercase) activeSets.push({ chars: CHARACTER_SETS.LOWERCASE, type: 'lowercase' });
-    if (includeNumbers) activeSets.push({ chars: CHARACTER_SETS.NUMBERS, type: 'numbers' });
-    if (includeSymbols) activeSets.push({ chars: CHARACTER_SETS.SYMBOLS, type: 'symbols' });
+    if (includeUppercase) activeSets.push({ chars: characterSets.UPPERCASE, type: 'uppercase' });
+    if (includeLowercase) activeSets.push({ chars: characterSets.LOWERCASE, type: 'lowercase' });
+    if (includeNumbers) activeSets.push({ chars: characterSets.NUMBERS, type: 'numbers' });
+    if (includeSymbols) activeSets.push({ chars: characterSets.SYMBOLS, type: 'symbols' });
 
     if (activeSets.length === 0) {
       activeSets.push(
-        { chars: CHARACTER_SETS.UPPERCASE, type: 'uppercase' },
-        { chars: CHARACTER_SETS.LOWERCASE, type: 'lowercase' },
-        { chars: CHARACTER_SETS.NUMBERS, type: 'numbers' },
-        { chars: CHARACTER_SETS.SYMBOLS, type: 'symbols' }
+        { chars: characterSets.UPPERCASE, type: 'uppercase' },
+        { chars: characterSets.LOWERCASE, type: 'lowercase' },
+        { chars: characterSets.NUMBERS, type: 'numbers' },
+        { chars: characterSets.SYMBOLS, type: 'symbols' }
       );
     }
 
     const hashLength = hash.length;
     const password = new Array<string>(length);
-    const targetDistribution = this.calculateTargetDistribution(activeSets, length);
+    const targetDistribution = this.calculateTargetDistribution(
+      activeSets,
+      length,
+      distributionConfig
+    );
 
     // Calculate maximum allowed repetitions based on password length
     const maxRepetitions = this.calculateMaxRepetitions(length);
@@ -420,7 +436,8 @@ export class PasswordGenerator {
    */
   private static calculateTargetDistribution(
     activeSets: CharacterSet[],
-    length: number
+    length: number,
+    distributionConfig: PasswordDistributionConfig = PASSWORD_DISTRIBUTION_CONFIG
   ): TargetDistribution {
     let targetDistribution: TargetDistribution = {
       uppercase: 0,
@@ -430,16 +447,16 @@ export class PasswordGenerator {
     };
 
     if (activeSets.length === 4) {
-      if (length >= PASSWORD_DISTRIBUTION_CONFIG.long.threshold) {
-        const config = PASSWORD_DISTRIBUTION_CONFIG.long.distribution;
+      if (length >= distributionConfig.long.threshold) {
+        const config = distributionConfig.long.distribution;
         targetDistribution = {
           uppercase: Math.floor(length * config.uppercase),
           lowercase: Math.floor(length * config.lowercase),
           numbers: Math.floor(length * config.numbers),
           symbols: Math.floor(length * config.symbols),
         };
-      } else if (length >= PASSWORD_DISTRIBUTION_CONFIG.medium.threshold) {
-        const config = PASSWORD_DISTRIBUTION_CONFIG.medium.distribution;
+      } else if (length >= distributionConfig.medium.threshold) {
+        const config = distributionConfig.medium.distribution;
         targetDistribution = {
           uppercase: Math.floor(length * config.uppercase),
           lowercase: Math.floor(length * config.lowercase),
@@ -705,6 +722,8 @@ export class PasswordGenerator {
       options: { ...DEFAULT_PASSWORD_OPTIONS, ...options.options },
       masterSalt: options.masterSalt ?? SECURITY_CONFIG.masterSalt,
       iterations: options.iterations ?? SECURITY_CONFIG.hashIterations,
+      characterSets: options.characterSets ?? CHARACTER_SETS,
+      distributionConfig: options.distributionConfig ?? PASSWORD_DISTRIBUTION_CONFIG,
     };
   }
 

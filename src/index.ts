@@ -351,6 +351,8 @@ export class NuwaultCore {
           options.includeSymbols ?? this.config.DEFAULT_PASSWORD_OPTIONS.includeSymbols,
       },
       masterSalt: options.masterSalt ?? this.config.SECURITY_CONFIG.masterSalt,
+      characterSets: this.config.CHARACTER_SETS,
+      distributionConfig: this.config.PASSWORD_DISTRIBUTION_CONFIG,
     });
     return result.password;
   }
