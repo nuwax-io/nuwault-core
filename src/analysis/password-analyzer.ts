@@ -77,7 +77,6 @@ export interface PasswordAnalysisResult {
  * Provides static methods for comprehensive password security analysis including advanced character diversity assessment
  */
 export class PasswordAnalyzer {
-
   /**
    * Analyze password and return comprehensive security assessment
    * @param password - Password to analyze
@@ -94,11 +93,22 @@ export class PasswordAnalyzer {
     const characterDiversity = this.analyzeCharacterDiversity(password);
     const repetitionAnalysis = this.analyzeRepetitionPattern(password);
     const entropy = this.calculateEntropy(password);
-    const strengthScore = this.calculateStrengthScore(password, characterCounts, entropy, characterDiversity);
+    const strengthScore = this.calculateStrengthScore(
+      password,
+      characterCounts,
+      entropy,
+      characterDiversity
+    );
     const strengthLevel = this.getStrengthLevel(strengthScore);
     const hasSequentialChars = this.hasSequentialCharacters(password);
     const hasRepeatedChars = this.hasRepeatedCharacters(password);
-    const suggestions = this.generateSuggestions(password, characterCounts, strengthScore, characterDiversity, repetitionAnalysis);
+    const suggestions = this.generateSuggestions(
+      password,
+      characterCounts,
+      strengthScore,
+      characterDiversity,
+      repetitionAnalysis
+    );
 
     return {
       length: password.length,
@@ -111,7 +121,7 @@ export class PasswordAnalyzer {
       entropy,
       hasSequentialChars,
       hasRepeatedChars,
-      suggestions
+      suggestions,
     };
   }
 
@@ -128,12 +138,12 @@ export class PasswordAnalyzer {
         averageRepetitions: 0,
         diversityRatio: 0,
         repetitionScore: 0,
-        varietyScore: 0
+        varietyScore: 0,
       };
     }
 
     const charCount = new Map<string, number>();
-    
+
     // Count character occurrences
     for (const char of password) {
       charCount.set(char, (charCount.get(char) || 0) + 1);
@@ -142,13 +152,16 @@ export class PasswordAnalyzer {
     const repetitionCounts = Array.from(charCount.values());
     const totalUniqueCharacters = charCount.size;
     const maxRepetitions = Math.max(...repetitionCounts);
-    const averageRepetitions = repetitionCounts.reduce((a, b) => a + b, 0) / repetitionCounts.length;
+    const averageRepetitions =
+      repetitionCounts.reduce((a, b) => a + b, 0) / repetitionCounts.length;
     const diversityRatio = totalUniqueCharacters / password.length;
 
     // Calculate repetition score (lower repetition = higher score)
     const maxAllowedRepetitions = this.calculateMaxAllowedRepetitions(password.length);
-    const repetitionScore = maxRepetitions <= maxAllowedRepetitions ? 100 : 
-                           Math.max(0, 100 - ((maxRepetitions - maxAllowedRepetitions) * 20));
+    const repetitionScore =
+      maxRepetitions <= maxAllowedRepetitions
+        ? 100
+        : Math.max(0, 100 - (maxRepetitions - maxAllowedRepetitions) * 20);
 
     // Calculate variety score (higher diversity = higher score)
     const varietyScore = Math.round(diversityRatio * 100);
@@ -159,7 +172,7 @@ export class PasswordAnalyzer {
       averageRepetitions: Math.round(averageRepetitions * 100) / 100,
       diversityRatio: Math.round(diversityRatio * 1000) / 1000,
       repetitionScore,
-      varietyScore
+      varietyScore,
     };
   }
 
@@ -170,14 +183,15 @@ export class PasswordAnalyzer {
    */
   static analyzeRepetitionPattern(password: string): RepetitionAnalysis {
     const charCount = new Map<string, number>();
-    
+
     // Count character occurrences
     for (const char of password) {
       charCount.set(char, (charCount.get(char) || 0) + 1);
     }
 
     const maxAllowedRepetitions = this.calculateMaxAllowedRepetitions(password.length);
-    const repetitionViolations: Array<{character: string; count: number; maxAllowed: number}> = [];
+    const repetitionViolations: Array<{ character: string; count: number; maxAllowed: number }> =
+      [];
     let maxActualRepetitions = 0;
 
     // Check for repetition violations
@@ -185,18 +199,18 @@ export class PasswordAnalyzer {
       if (count > maxActualRepetitions) {
         maxActualRepetitions = count;
       }
-      
+
       if (count > maxAllowedRepetitions) {
         repetitionViolations.push({
           character: char,
           count,
-          maxAllowed: maxAllowedRepetitions
+          maxAllowed: maxAllowedRepetitions,
         });
       }
     }
 
     const hasExcessiveRepetition = repetitionViolations.length > 0;
-    
+
     // Determine repetition quality
     let repetitionQuality: 'Excellent' | 'Good' | 'Fair' | 'Poor';
     if (maxActualRepetitions <= Math.max(1, maxAllowedRepetitions - 1)) {
@@ -213,7 +227,7 @@ export class PasswordAnalyzer {
       hasExcessiveRepetition,
       maxAllowedRepetitions,
       repetitionViolations,
-      repetitionQuality
+      repetitionQuality,
     };
   }
 
@@ -257,7 +271,7 @@ export class PasswordAnalyzer {
       lowercase,
       numbers,
       symbols,
-      total: password.length
+      total: password.length,
     };
   }
 
@@ -268,16 +282,16 @@ export class PasswordAnalyzer {
    */
   static calculateCharacterDistribution(counts: CharacterTypeCounts): CharacterDistribution {
     const { total, uppercase, lowercase, numbers, symbols } = counts;
-    
+
     if (total === 0) {
       return { uppercase: 0, lowercase: 0, numbers: 0, symbols: 0 };
     }
 
     return {
-      uppercase: Number((uppercase / total * 100).toFixed(2)),
-      lowercase: Number((lowercase / total * 100).toFixed(2)),
-      numbers: Number((numbers / total * 100).toFixed(2)),
-      symbols: Number((symbols / total * 100).toFixed(2))
+      uppercase: Number(((uppercase / total) * 100).toFixed(2)),
+      lowercase: Number(((lowercase / total) * 100).toFixed(2)),
+      numbers: Number(((numbers / total) * 100).toFixed(2)),
+      symbols: Number(((symbols / total) * 100).toFixed(2)),
     };
   }
 
@@ -313,7 +327,12 @@ export class PasswordAnalyzer {
    * @param diversity - Character diversity metrics
    * @returns Strength score from 0-100
    */
-  static calculateStrengthScore(password: string, counts: CharacterTypeCounts, entropy: number, diversity: CharacterDiversityMetrics): number {
+  static calculateStrengthScore(
+    password: string,
+    counts: CharacterTypeCounts,
+    entropy: number,
+    diversity: CharacterDiversityMetrics
+  ): number {
     let score = 0;
 
     // Length score (max 20 points)
@@ -325,9 +344,9 @@ export class PasswordAnalyzer {
       counts.uppercase > 0,
       counts.lowercase > 0,
       counts.numbers > 0,
-      counts.symbols > 0
+      counts.symbols > 0,
     ].filter(Boolean).length;
-    
+
     const varietyScore = (typesUsed / 4) * 20;
     score += varietyScore;
 
@@ -345,15 +364,15 @@ export class PasswordAnalyzer {
 
     // Apply penalties
     let penalties = 0;
-    
+
     if (this.hasSequentialCharacters(password)) {
       penalties += 5;
     }
-    
+
     if (this.hasRepeatedCharacters(password)) {
       penalties += 3;
     }
-    
+
     if (this.hasCommonPatterns(password)) {
       penalties += 10;
     }
@@ -380,7 +399,7 @@ export class PasswordAnalyzer {
    */
   private static calculateBalanceScore(counts: CharacterTypeCounts): number {
     const { total, uppercase, lowercase, numbers, symbols } = counts;
-    
+
     if (total === 0) return 20;
 
     const ideal = total / 4;
@@ -388,15 +407,15 @@ export class PasswordAnalyzer {
       Math.abs(uppercase - ideal),
       Math.abs(lowercase - ideal),
       Math.abs(numbers - ideal),
-      Math.abs(symbols - ideal)
+      Math.abs(symbols - ideal),
     ];
 
     const avgDeviation = deviations.reduce((sum, dev) => sum + dev, 0) / 4;
     const maxPossibleDeviation = ideal;
-    
+
     if (maxPossibleDeviation === 0) return 20;
-    
-    const balanceRatio = 1 - (avgDeviation / maxPossibleDeviation);
+
+    const balanceRatio = 1 - avgDeviation / maxPossibleDeviation;
     return Math.round(balanceRatio * 20);
   }
 
@@ -405,7 +424,9 @@ export class PasswordAnalyzer {
    * @param score - Strength score (0-100)
    * @returns Human-readable strength level
    */
-  static getStrengthLevel(score: number): 'Very Weak' | 'Weak' | 'Fair' | 'Good' | 'Strong' | 'Very Strong' {
+  static getStrengthLevel(
+    score: number
+  ): 'Very Weak' | 'Weak' | 'Fair' | 'Good' | 'Strong' | 'Very Strong' {
     if (score >= 90) return 'Very Strong';
     if (score >= 75) return 'Strong';
     if (score >= 60) return 'Good';
@@ -472,9 +493,9 @@ export class PasswordAnalyzer {
    * @returns Array of specific improvement recommendations
    */
   private static generateSuggestions(
-    password: string, 
-    counts: CharacterTypeCounts, 
-    score: number, 
+    password: string,
+    counts: CharacterTypeCounts,
+    score: number,
     diversity: CharacterDiversityMetrics,
     repetitionAnalysis: RepetitionAnalysis
   ): string[] {
@@ -509,7 +530,9 @@ export class PasswordAnalyzer {
 
     // Character diversity suggestions
     if (diversity.diversityRatio < 0.6) {
-      suggestions.push(`Increase character variety - only ${diversity.totalUniqueCharacters} unique characters out of ${password.length} total`);
+      suggestions.push(
+        `Increase character variety - only ${diversity.totalUniqueCharacters} unique characters out of ${password.length} total`
+      );
     }
 
     if (diversity.varietyScore < 70) {
@@ -519,7 +542,9 @@ export class PasswordAnalyzer {
     // Repetition suggestions
     if (repetitionAnalysis.hasExcessiveRepetition) {
       const violationCount = repetitionAnalysis.repetitionViolations.length;
-      suggestions.push(`Reduce character repetition - ${violationCount} character${violationCount > 1 ? 's' : ''} exceed${violationCount === 1 ? 's' : ''} recommended limits`);
+      suggestions.push(
+        `Reduce character repetition - ${violationCount} character${violationCount > 1 ? 's' : ''} exceed${violationCount === 1 ? 's' : ''} recommended limits`
+      );
     }
 
     if (repetitionAnalysis.repetitionQuality === 'Poor') {
@@ -546,9 +571,11 @@ export class PasswordAnalyzer {
     }
 
     if (suggestions.length === 0) {
-      suggestions.push('Your password could be stronger with more character variety and better distribution');
+      suggestions.push(
+        'Your password could be stronger with more character variety and better distribution'
+      );
     }
 
     return suggestions;
   }
-} 
+}
