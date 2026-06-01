@@ -43,10 +43,10 @@ We recommend users follow these best practices when using Nuwault Core:
 Nuwault Core implements:
 
 - **Deterministic generation**: Same input → same output
-- **SHA-512 hashing** with multiple iterations
+- **SHA-512 hashing** with multiple iterations and unique per-iteration salts
 - **Secure random generation** for entropy-based operations
-- **Input validation** to ensure consistent, expected input structure
-- **Timing attack resistance** in critical comparisons
+- **Input validation**: Non-empty string enforcement, 128-character hex validation for hash inputs, length range checks
+- **Hash format enforcement**: `hashToPassword` rejects any value that is not a valid 128-character SHA-512 hex string
 
 ## Security Considerations
 
