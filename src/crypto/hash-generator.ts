@@ -65,7 +65,6 @@ export interface TestVectorResult {
  * Provides deterministic hash generation with security features
  */
 export class HashGenerator {
-  
   /**
    * Generate deterministic hash from user keywords with security features
    * @param options - Hash generation configuration
@@ -74,14 +73,14 @@ export class HashGenerator {
    */
   static async generateHash(options: HashOptions): Promise<HashResult> {
     const { keywords, masterSalt = null, iterations = SECURITY_CONFIG.hashIterations } = options;
-    
+
     const validatedInputs = this.validateInputs(keywords);
     const normalizedInputs = validatedInputs.map(input => this.normalizeInput(input)).join('|');
     let currentHash = normalizedInputs;
-    
+
     const encoder = new TextEncoder();
     const effectiveMasterSalt = masterSalt !== null ? masterSalt : SECURITY_CONFIG.masterSalt;
-    
+
     for (let i = 0; i < iterations; i++) {
       const saltComponents: string[] = [];
 
@@ -97,11 +96,11 @@ export class HashGenerator {
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       currentHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
-    
+
     return {
       hash: currentHash,
       iterations,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -118,18 +117,18 @@ export class HashGenerator {
     const environment = {
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
       nodeVersion: typeof process !== 'undefined' ? process.version : undefined,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     for (let i = 0; i < ALGORITHM_TEST_VECTORS.length; i++) {
       const vector = ALGORITHM_TEST_VECTORS[i];
-      
+
       try {
         // Generate hash for test vector
         const hashResult = await this.generateHash({
           keywords: vector.input.keywords,
           masterSalt: vector.input.masterSalt,
-          iterations: SECURITY_CONFIG.hashIterations
+          iterations: SECURITY_CONFIG.hashIterations,
         });
 
         const actualHashPrefix = hashResult.hash.substring(0, 16);
@@ -142,13 +141,12 @@ export class HashGenerator {
           actual: actualHashPrefix,
           hashPrefix: {
             expected: vector.expectedOutput.hashPrefix,
-            actual: actualHashPrefix
+            actual: actualHashPrefix,
           },
-          passed
+          passed,
         });
 
         if (passed) passedCount++;
-
       } catch (error) {
         results.push({
           vectorIndex: i,
@@ -157,10 +155,10 @@ export class HashGenerator {
           actual: '',
           hashPrefix: {
             expected: vector.expectedOutput.hashPrefix,
-            actual: ''
+            actual: '',
           },
           passed: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
@@ -173,7 +171,7 @@ export class HashGenerator {
       testedVectors: ALGORITHM_TEST_VECTORS.length,
       passedVectors: passedCount,
       failedVectors,
-      environment
+      environment,
     };
   }
 
@@ -188,7 +186,7 @@ export class HashGenerator {
       const testVector = ALGORITHM_TEST_VECTORS[0];
       const hashResult = await this.generateHash({
         keywords: testVector.input.keywords,
-        masterSalt: testVector.input.masterSalt
+        masterSalt: testVector.input.masterSalt,
       });
 
       const actualPrefix = hashResult.hash.substring(0, 16);
@@ -197,7 +195,7 @@ export class HashGenerator {
       return false;
     }
   }
-  
+
   /**
    * Validate and filter input keywords array
    * @param inputs - Raw input keywords array
@@ -209,9 +207,7 @@ export class HashGenerator {
       throw new Error('Inputs must be a non-empty array');
     }
 
-    const filtered = inputs.filter(
-      input => typeof input === 'string' && input.trim().length > 0
-    );
+    const filtered = inputs.filter(input => typeof input === 'string' && input.trim().length > 0);
 
     if (filtered.length === 0) {
       throw new Error('Inputs must contain at least one non-empty string');
@@ -219,7 +215,7 @@ export class HashGenerator {
 
     return filtered;
   }
-  
+
   /**
    * Normalize input string for consistent processing
    * @param input - Raw input string
@@ -228,7 +224,7 @@ export class HashGenerator {
   private static normalizeInput(input: string): string {
     return input.trim().toLowerCase();
   }
-  
+
   /**
    * Validate hash generation options structure
    * @param options - Hash generation options to validate
@@ -238,19 +234,26 @@ export class HashGenerator {
     if (!options || typeof options !== 'object') {
       return false;
     }
-    
+
     if (!Array.isArray(options.keywords) || options.keywords.length === 0) {
       return false;
     }
-    
-    if (options.iterations !== undefined && (typeof options.iterations !== 'number' || options.iterations < 1)) {
+
+    if (
+      options.iterations !== undefined &&
+      (typeof options.iterations !== 'number' || options.iterations < 1)
+    ) {
       return false;
     }
-    
-    if (options.masterSalt !== undefined && options.masterSalt !== null && typeof options.masterSalt !== 'string') {
+
+    if (
+      options.masterSalt !== undefined &&
+      options.masterSalt !== null &&
+      typeof options.masterSalt !== 'string'
+    ) {
       return false;
     }
-    
+
     return true;
   }
-} 
+}
