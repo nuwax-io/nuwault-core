@@ -107,6 +107,16 @@ export interface PasswordDistributionConfig {
 }
 
 /**
+ * Base character diversity metrics shared between password generation results and full analysis
+ */
+export interface CharacterDiversityBase {
+  totalUniqueCharacters: number;
+  maxRepetitions: number;
+  averageRepetitions: number;
+  diversityRatio: number;
+}
+
+/**
  * Custom configuration interface for merging user settings
  * Allows partial overrides of default configuration
  */
@@ -283,3 +293,44 @@ export const mergeConfig = (customConfig: CustomConfig = {}): MergedConfig => {
     },
   };
 };
+
+/**
+ * Maximum allowed lengths for user-supplied inputs
+ * Prevents memory exhaustion from extremely long strings
+ */
+export const INPUT_LIMITS = {
+  maxKeywordLength: 1000,
+  maxMasterSaltLength: 1000,
+} as const;
+
+/**
+ * Strength scoring weights and thresholds for password analysis
+ * All five score components cap at maxComponentScore (20), totalling 100.
+ */
+export const STRENGTH_SCORE_CONFIG = {
+  maxComponentScore: 20,
+  lengthMultiplier: 1.5,
+  entropyMultiplier: 4,
+  diversityVarietyWeight: 0.6,
+  diversityRepetitionWeight: 0.4,
+  diversityScoreNormalizer: 0.2,
+  minRepetitionScoreForPenalty: 80,
+  repetitionPenaltyFactor: 0.1,
+  minDiversityRatio: 0.6,
+  sequentialCharPenalty: 5,
+  repeatedCharPenalty: 3,
+  commonPatternPenalty: 10,
+  minRecommendedLength: 12,
+  minVarietyScore: 70,
+} as const;
+
+/**
+ * Calculate maximum allowed character repetitions based on password length
+ * Shared by both password generation and analysis to enforce identical limits
+ */
+export function calculateMaxRepetitions(length: number): number {
+  if (length <= 8) return 2;
+  if (length <= 16) return Math.max(2, Math.floor(length / 6));
+  if (length <= 32) return Math.max(2, Math.floor(length / 8));
+  return Math.max(3, Math.floor(length / 10));
+}
