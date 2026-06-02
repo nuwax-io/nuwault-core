@@ -126,6 +126,7 @@ Generate a secure, deterministic password from input keywords.
 **Throws:**
 - `Error` - If no keywords provided: `"At least one keyword is required"`
 - `Error` - If a keyword is empty: `"Keyword at index N cannot be empty or contain only whitespace"`
+- `Error` - If a keyword exceeds 1000 characters: `"Keyword at index N exceeds maximum length of 1000 characters"`
 - `Error` - If length out of range: `"Password length must be at least 8 characters"` / `"Password length cannot exceed 128 characters"`
 - `Error` - If all character types disabled: `"At least one character type must be enabled"`
 
@@ -177,12 +178,13 @@ const saltedPassword = await generator.generatePassword(
 );
 ```
 
-**`analyzePassword(password)`**
+**`analyzePassword(password, _options?)`**
 
 Analyze character type distribution in a password.
 
 **Parameters:**
 - `password` (string): Password to analyze
+- `_options` (**deprecated**, optional): Accepted for backward compatibility but has no effect. Use the standalone `analyzePassword()` export for full strength analysis.
 
 **Returns:** `CharacterDistribution` — percentage share of each character type (rounded to 2 decimal places)
 - `uppercase` (number): Percentage of uppercase letters (e.g., `25.0`)
@@ -228,9 +230,12 @@ import {
   DEFAULT_PASSWORD_OPTIONS,
   ALGORITHM_VERSION,
   ALGORITHM_TEST_VECTORS,
+  INPUT_LIMITS,
+  STRENGTH_SCORE_CONFIG,
 
   // Utility functions
   mergeConfig,
+  calculateMaxRepetitions,
 } from '@nuwax-io/nuwault-core';
 ```
 
@@ -274,8 +279,7 @@ Generate a cryptographic hash from input strings using SHA-512 with multiple ite
 
 **Throws:**
 - `Error` - If no inputs provided
-- `Error` - If all inputs are empty
-- `Error` - If combined input length is too short (< 3 characters)
+- `Error` - If all inputs are empty or whitespace-only
 
 **`hashToPassword(hash, options)`**
 
@@ -680,7 +684,54 @@ Default options for password generation.
 }
 ```
 
+**`INPUT_LIMITS`**
+
+Maximum allowed lengths for user-supplied inputs. Enforced by `InputValidator` to prevent memory exhaustion from extremely large strings.
+
+```javascript
+{
+  maxKeywordLength: 1000,      // Per-keyword character limit
+  maxMasterSaltLength: 1000    // masterSalt character limit
+}
+```
+
+**`STRENGTH_SCORE_CONFIG`**
+
+Named constants for all weights, multipliers, and thresholds used by `PasswordAnalyzer.calculateStrengthScore()`. Each of the five score components (length, variety, entropy, diversity, balance) has a maximum of `maxComponentScore` (20), totalling 100.
+
+```javascript
+{
+  maxComponentScore: 20,
+  lengthMultiplier: 1.5,
+  entropyMultiplier: 4,
+  diversityVarietyWeight: 0.6,
+  diversityRepetitionWeight: 0.4,
+  diversityScoreNormalizer: 0.2,
+  minRepetitionScoreForPenalty: 80,
+  repetitionPenaltyFactor: 0.1,
+  minDiversityRatio: 0.6,
+  sequentialCharPenalty: 5,
+  repeatedCharPenalty: 3,
+  commonPatternPenalty: 10,
+  minRecommendedLength: 12,
+  minVarietyScore: 70
+}
+```
+
 ## Utility Functions
+
+**`calculateMaxRepetitions(length)`**
+
+Returns the maximum number of times any single character may appear in a password of the given length. Used internally by both `PasswordGenerator` and `PasswordAnalyzer` to enforce identical repetition limits.
+
+```javascript
+calculateMaxRepetitions(8)   // → 2
+calculateMaxRepetitions(16)  // → 2
+calculateMaxRepetitions(24)  // → 3
+calculateMaxRepetitions(32)  // → 4
+calculateMaxRepetitions(64)  // → 6
+calculateMaxRepetitions(128) // → 12
+```
 
 **`mergeConfig(customConfig)`**
 
