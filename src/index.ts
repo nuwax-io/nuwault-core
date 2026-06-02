@@ -360,10 +360,11 @@ export class NuwaultCore {
   /**
    * Analyze character distribution in password
    * @param password - Password to analyze
-   * @param _options - Analysis options (reserved for future use)
-   * @returns Character distribution analysis
+   * @param _options - @deprecated This parameter has no effect and will be removed in a future version.
+   *   For full strength analysis (score, entropy, suggestions) use the module-level `analyzePassword()` export.
+   * @returns Character distribution as percentages for each character type
    */
-  analyzePassword(password: string, _options: any = {}): CharacterDistribution {
+  analyzePassword(password: string, _options?: unknown): CharacterDistribution {
     return analyzeCharacterDistribution(password);
   }
 }
