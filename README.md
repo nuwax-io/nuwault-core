@@ -4,7 +4,7 @@
 [![Test Coverage](https://img.shields.io/badge/coverage-vitest-green.svg?style=flat-square&logo=vitest)](https://vitest.dev/)
 [![Security](https://img.shields.io/badge/Security-SHA--512-red.svg?style=flat-square&logo=security)](SECURITY.md)
 
-> **Nuwault Core** - Enterprise-grade deterministic password generation library built with TypeScript. Transform your memorable keywords into cryptographically secure passwords with guaranteed consistency across all platforms and devices. Featuring advanced character diversity algorithms, repetition control, and balanced distribution for maximum security without compromising usability.
+**Nuwault Core** - Enterprise-grade deterministic password generation library built with TypeScript. Transform your memorable keywords into cryptographically secure passwords with guaranteed consistency across all platforms and devices. Featuring advanced character diversity algorithms, repetition control, and balanced distribution for maximum security without compromising usability.
 
 ### Key Highlights
 - **Enterprise Security**: SHA-512 cryptographic hashing with 1000+ configurable iterations, unique salt per iteration, and optional master salt support
