@@ -12,6 +12,9 @@ export {
   ALGORITHM_VERSION,
   ALGORITHM_TEST_VECTORS,
   mergeConfig,
+  INPUT_LIMITS,
+  STRENGTH_SCORE_CONFIG,
+  calculateMaxRepetitions,
 } from './config.js';
 
 export type {
@@ -24,6 +27,7 @@ export type {
   MergedConfig,
   AlgorithmVersion,
   TestVector,
+  CharacterDiversityBase,
 } from './config.js';
 
 // Core functionality exports
