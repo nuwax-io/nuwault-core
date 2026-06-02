@@ -12,10 +12,16 @@ import {
   SECURITY_CONFIG,
   ALGORITHM_VERSION,
   ALGORITHM_TEST_VECTORS,
+  calculateMaxRepetitions,
 } from '../config.js';
 import type { HashOptions } from '../crypto/hash-generator.js';
 import type { PasswordOptions, ValidationResult } from '../utils/input-validator.js';
-import type { TestVector, CharacterSets, PasswordDistributionConfig } from '../config.js';
+import type {
+  TestVector,
+  CharacterSets,
+  PasswordDistributionConfig,
+  CharacterDiversityBase,
+} from '../config.js';
 
 /**
  * Password generation options interface
@@ -48,12 +54,7 @@ export interface PasswordGenerationResult {
       numbers: number;
       symbols: number;
     };
-    characterDiversity: {
-      totalUniqueCharacters: number;
-      maxRepetitions: number;
-      averageRepetitions: number;
-      diversityRatio: number;
-    };
+    characterDiversity: CharacterDiversityBase;
   };
 }
 
@@ -376,8 +377,7 @@ export class PasswordGenerator {
       distributionConfig
     );
 
-    // Calculate maximum allowed repetitions based on password length
-    const maxRepetitions = this.calculateMaxRepetitions(length);
+    const maxRepetitions = calculateMaxRepetitions(length);
     const characterUsage = new Map<string, number>();
 
     let hashOffset = 0;
@@ -388,6 +388,8 @@ export class PasswordGenerator {
       const index3 = (hashOffset + seed + 2) % hashLength;
       hashOffset = (hashOffset + 3) % hashLength;
 
+      // When the three hex chars are '000' (value 0), we return 1 instead.
+      // This is algorithm-locked behaviour — changing it alters every generated password.
       return parseInt(hash[index1] + hash[index2] + hash[index3], 16) || 1;
     };
 
@@ -414,18 +416,6 @@ export class PasswordGenerator {
     this.shufflePassword(password, length, getHashValue);
 
     return password.join('');
-  }
-
-  /**
-   * Calculate maximum allowed repetitions for a character based on password length
-   * @param length - Password length
-   * @returns Maximum number of times a character can repeat
-   */
-  private static calculateMaxRepetitions(length: number): number {
-    if (length <= 8) return 2;
-    if (length <= 16) return Math.max(2, Math.floor(length / 6));
-    if (length <= 32) return Math.max(2, Math.floor(length / 8));
-    return Math.max(3, Math.floor(length / 10));
   }
 
   /**
@@ -681,12 +671,7 @@ export class PasswordGenerator {
    * @param password - Generated password to analyze
    * @returns Character diversity analysis
    */
-  private static calculateCharacterDiversity(password: string): {
-    totalUniqueCharacters: number;
-    maxRepetitions: number;
-    averageRepetitions: number;
-    diversityRatio: number;
-  } {
+  private static calculateCharacterDiversity(password: string): CharacterDiversityBase {
     const charCount = new Map<string, number>();
 
     for (const char of password) {
