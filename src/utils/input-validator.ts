@@ -3,7 +3,7 @@
  * Provides comprehensive validation for all password generation parameters
  */
 
-import { SECURITY_CONFIG, DEFAULT_PASSWORD_OPTIONS } from '../config.js';
+import { SECURITY_CONFIG, DEFAULT_PASSWORD_OPTIONS, INPUT_LIMITS } from '../config.js';
 import type { DefaultPasswordOptions } from '../config.js';
 
 /**
@@ -127,6 +127,13 @@ export class InputValidator {
           error: `Keyword at index ${i} cannot be empty or contain only whitespace`,
         };
       }
+
+      if (keyword.length > INPUT_LIMITS.maxKeywordLength) {
+        return {
+          isValid: false,
+          error: `Keyword at index ${i} exceeds maximum length of ${INPUT_LIMITS.maxKeywordLength} characters`,
+        };
+      }
     }
 
     return { isValid: true };
@@ -153,6 +160,13 @@ export class InputValidator {
       return {
         isValid: false,
         error: 'Master salt cannot be empty string (use null instead)',
+      };
+    }
+
+    if (masterSalt.length > INPUT_LIMITS.maxMasterSaltLength) {
+      return {
+        isValid: false,
+        error: `Master salt exceeds maximum length of ${INPUT_LIMITS.maxMasterSaltLength} characters`,
       };
     }
 
