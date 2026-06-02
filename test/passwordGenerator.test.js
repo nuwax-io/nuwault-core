@@ -22,6 +22,8 @@ import {
   NuwaultCore,
   SECURITY_CONFIG,
   ALGORITHM_TEST_VECTORS,
+  INPUT_LIMITS,
+  calculateMaxRepetitions,
 } from '../dist/index.js';
 
 describe('Password Generator - TypeScript API', () => {
@@ -512,6 +514,127 @@ describe('Password Generator - TypeScript API', () => {
       expect(distribution).toHaveProperty('lowercase');
       expect(distribution).toHaveProperty('numbers');
       expect(distribution).toHaveProperty('symbols');
+    });
+  });
+
+  describe('InputValidator - Length Limits', () => {
+    it('should reject keywords exceeding maximum length', () => {
+      const longKeyword = 'a'.repeat(INPUT_LIMITS.maxKeywordLength + 1);
+      const result = InputValidator.validateKeywords([longKeyword]);
+      expect(result.isValid).toBe(false);
+      expect(result.error).toMatch(/exceeds maximum length/i);
+    });
+
+    it('should accept keywords at maximum length', () => {
+      const maxKeyword = 'a'.repeat(INPUT_LIMITS.maxKeywordLength);
+      expect(InputValidator.validateKeywords([maxKeyword]).isValid).toBe(true);
+    });
+
+    it('should reject masterSalt exceeding maximum length', () => {
+      const longSalt = 'a'.repeat(INPUT_LIMITS.maxMasterSaltLength + 1);
+      const result = InputValidator.validateMasterSalt(longSalt);
+      expect(result.isValid).toBe(false);
+      expect(result.error).toMatch(/exceeds maximum length/i);
+    });
+
+    it('should accept masterSalt at maximum length', () => {
+      const maxSalt = 'a'.repeat(INPUT_LIMITS.maxMasterSaltLength);
+      expect(InputValidator.validateMasterSalt(maxSalt).isValid).toBe(true);
+    });
+  });
+
+  describe('PasswordAnalyzer - Entropy', () => {
+    it('should return 0 entropy for a single unique character', () => {
+      expect(PasswordAnalyzer.calculateEntropy('aaaa')).toBe(0);
+    });
+
+    it('should return 1 bit entropy for two equally distributed characters', () => {
+      expect(PasswordAnalyzer.calculateEntropy('abab')).toBe(1);
+    });
+
+    it('should return 0 entropy for an empty string', () => {
+      expect(PasswordAnalyzer.calculateEntropy('')).toBe(0);
+    });
+
+    it('should return higher entropy for more diverse passwords', () => {
+      const lowDiversity = 'aaaabbbbccccdddd';
+      const highDiversity = 'aAbB1!cC2@dD3#eE';
+      expect(PasswordAnalyzer.calculateEntropy(highDiversity)).toBeGreaterThan(
+        PasswordAnalyzer.calculateEntropy(lowDiversity)
+      );
+    });
+  });
+
+  describe('NuwaultCore - Custom CHARACTER_SETS', () => {
+    it('should restrict characters to a custom uppercase set', async () => {
+      const core = new NuwaultCore({
+        CHARACTER_SETS: { UPPERCASE: 'ABCDE' },
+        DEFAULT_PASSWORD_OPTIONS: {
+          includeUppercase: true,
+          includeLowercase: false,
+          includeNumbers: false,
+          includeSymbols: false,
+        },
+      });
+      const password = await core.generatePassword(['test'], { length: 20 });
+      expect(password).toMatch(/^[ABCDE]+$/);
+    });
+
+    it('should restrict characters to a fully custom set', async () => {
+      const core = new NuwaultCore({
+        CHARACTER_SETS: {
+          UPPERCASE: 'ABC',
+          LOWERCASE: 'xyz',
+          NUMBERS: '123',
+          SYMBOLS: '!@#',
+        },
+      });
+      const password = await core.generatePassword(['test'], { length: 20 });
+      expect(password).toMatch(/^[ABCxyz123!@#]+$/);
+    });
+
+    it('should remain deterministic with custom character sets', async () => {
+      const core = new NuwaultCore({
+        CHARACTER_SETS: { UPPERCASE: 'ABCDE', LOWERCASE: 'vwxyz' },
+      });
+      const pass1 = await core.generatePassword(['test'], { length: 16 });
+      const pass2 = await core.generatePassword(['test'], { length: 16 });
+      expect(pass1).toBe(pass2);
+    });
+  });
+
+  describe('calculateMaxRepetitions', () => {
+    it('should return 2 for very short passwords (length <= 8)', () => {
+      expect(calculateMaxRepetitions(8)).toBe(2);
+      expect(calculateMaxRepetitions(4)).toBe(2);
+    });
+
+    it('should return correct values for medium-short passwords (length <= 16)', () => {
+      expect(calculateMaxRepetitions(16)).toBe(2); // Math.max(2, floor(16/6)) = 2
+      expect(calculateMaxRepetitions(12)).toBe(2); // Math.max(2, floor(12/6)) = 2
+    });
+
+    it('should return correct values for medium passwords (length <= 32)', () => {
+      expect(calculateMaxRepetitions(24)).toBe(3); // Math.max(2, floor(24/8)) = 3
+      expect(calculateMaxRepetitions(32)).toBe(4); // Math.max(2, floor(32/8)) = 4
+    });
+
+    it('should return correct values for long passwords (length > 32)', () => {
+      expect(calculateMaxRepetitions(64)).toBe(6); // Math.max(3, floor(64/10)) = 6
+      expect(calculateMaxRepetitions(128)).toBe(12); // Math.max(3, floor(128/10)) = 12
+    });
+
+    it('should match the repetition limits enforced during generation', async () => {
+      const lengths = [8, 16, 24, 32, 64];
+      for (const length of lengths) {
+        const result = await PasswordGenerator.generatePassword({
+          keywords: ['rep-limit-test', length.toString()],
+          length,
+        });
+        expect(result.metadata.characterDiversity.maxRepetitions).toBeLessThanOrEqual(
+          calculateMaxRepetitions(length)
+        );
+      }
     });
   });
 
