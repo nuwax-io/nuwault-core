@@ -31,7 +31,7 @@
 - **CLI Tools & Scripts**: Deterministic password generation for automation, deployment scripts, and infrastructure tools
 
 ### Quality Assurance
-- **Comprehensive Testing**: 54+ test cases covering hash generation, password generation, character diversity, input validation, and cross-platform compatibility
+- **Comprehensive Testing**: 70+ test cases covering hash generation, password generation, character diversity, input validation, custom character sets, entropy calculation, repetition limits, and cross-platform compatibility
 - **Character Diversity Algorithms**: Dynamic repetition control (8-char: max 2 reps, 32-char: max 4 reps), balanced distribution, and entropy maximization
 - **Adaptive Distribution**: Length-based strategies (short: equal, medium: 25/35/20/20, long: 20/35/20/25) for optimal security
 - **Algorithm Stability**: Test vector validation across Node.js, browsers, and Electron with automated regression detection
