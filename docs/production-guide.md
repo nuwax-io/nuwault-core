@@ -338,7 +338,7 @@ npm run release           # Complete production readiness validation
 | Command | Purpose | Includes | Exit Code |
 |---------|---------|----------|-----------|
 | `npm run ci` | Full CI pipeline locally | format:check + type-check + test + build + verify:algorithm | 0 = all pass |
-| `npm test` | Run test suite | 54 tests + algorithm validation | 0 = success |
+| `npm test` | Run test suite | 70 tests + algorithm validation | 0 = success |
 | `npm run validate` | Comprehensive check | Type-check + Tests + Version sync | 0 = all pass |
 | `npm run version-check` | Version consistency | Algorithm ↔ Package.json sync | 0 = synchronized |
 | `npm run prepublishOnly` | Pre-publish validation | Version + Clean + Build + Test | 0 = ready to publish |
