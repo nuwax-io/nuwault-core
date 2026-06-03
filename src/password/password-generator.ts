@@ -5,17 +5,23 @@
 
 import { HashGenerator } from '../crypto/hash-generator.js';
 import { InputValidator } from '../utils/input-validator.js';
-import { 
-  CHARACTER_SETS, 
-  PASSWORD_DISTRIBUTION_CONFIG, 
-  DEFAULT_PASSWORD_OPTIONS, 
+import {
+  CHARACTER_SETS,
+  PASSWORD_DISTRIBUTION_CONFIG,
+  DEFAULT_PASSWORD_OPTIONS,
   SECURITY_CONFIG,
   ALGORITHM_VERSION,
-  ALGORITHM_TEST_VECTORS
+  ALGORITHM_TEST_VECTORS,
+  calculateMaxRepetitions,
 } from '../config.js';
 import type { HashOptions } from '../crypto/hash-generator.js';
 import type { PasswordOptions, ValidationResult } from '../utils/input-validator.js';
-import type { TestVector } from '../config.js';
+import type {
+  TestVector,
+  CharacterSets,
+  PasswordDistributionConfig,
+  CharacterDiversityBase,
+} from '../config.js';
 
 /**
  * Password generation options interface
@@ -27,6 +33,8 @@ export interface PasswordGenerationOptions {
   options?: PasswordOptions;
   masterSalt?: string | null;
   iterations?: number;
+  characterSets?: CharacterSets;
+  distributionConfig?: PasswordDistributionConfig;
 }
 
 /**
@@ -46,12 +54,7 @@ export interface PasswordGenerationResult {
       numbers: number;
       symbols: number;
     };
-    characterDiversity: {
-      totalUniqueCharacters: number;
-      maxRepetitions: number;
-      averageRepetitions: number;
-      diversityRatio: number;
-    };
+    characterDiversity: CharacterDiversityBase;
   };
 }
 
@@ -116,19 +119,20 @@ interface TargetDistribution {
  * Converts cryptographic hashes into secure passwords with balanced character distribution and minimal repetition
  */
 export class PasswordGenerator {
-
   /**
    * Generate deterministic password from user keywords
    * @param options - Password generation configuration
    * @returns Promise resolving to password generation result with metadata
    * @throws {Error} When generation options are invalid
    */
-  static async generatePassword(options: PasswordGenerationOptions): Promise<PasswordGenerationResult> {
+  static async generatePassword(
+    options: PasswordGenerationOptions
+  ): Promise<PasswordGenerationResult> {
     const startTime = Date.now();
-    
+
     const normalizedOptions = this.normalizeOptions(options);
     const validation = this.validateGenerationOptions(normalizedOptions);
-    
+
     if (!validation.isValid) {
       throw new Error(validation.error || 'Invalid password generation options');
     }
@@ -136,7 +140,7 @@ export class PasswordGenerator {
     const hashOptions: HashOptions = {
       keywords: normalizedOptions.keywords,
       masterSalt: normalizedOptions.masterSalt,
-      iterations: normalizedOptions.iterations
+      iterations: normalizedOptions.iterations,
     };
 
     const hashResult = await HashGenerator.generateHash(hashOptions);
@@ -144,7 +148,9 @@ export class PasswordGenerator {
     const password = this.hashToPassword(
       hashResult.hash,
       normalizedOptions.length,
-      normalizedOptions.options
+      normalizedOptions.options,
+      normalizedOptions.characterSets,
+      normalizedOptions.distributionConfig
     );
 
     const characterDistribution = this.calculateActualDistribution(password);
@@ -158,8 +164,8 @@ export class PasswordGenerator {
         hashIterations: hashResult.iterations,
         generationTime: Date.now() - startTime,
         characterDistribution,
-        characterDiversity
-      }
+        characterDiversity,
+      },
     };
   }
 
@@ -176,19 +182,19 @@ export class PasswordGenerator {
     const environment = {
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
       nodeVersion: typeof process !== 'undefined' ? process.version : undefined,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     for (let i = 0; i < ALGORITHM_TEST_VECTORS.length; i++) {
       const vector = ALGORITHM_TEST_VECTORS[i];
-      
+
       try {
         // Generate password for test vector
         const result = await this.generatePassword({
           keywords: vector.input.keywords,
           length: vector.input.length,
           options: vector.input.options,
-          masterSalt: vector.input.masterSalt
+          masterSalt: vector.input.masterSalt,
         });
 
         const differences: string[] = [];
@@ -196,7 +202,9 @@ export class PasswordGenerator {
 
         // Check password match
         if (result.password !== vector.expectedOutput.password) {
-          differences.push(`password: expected "${vector.expectedOutput.password}", got "${result.password}"`);
+          differences.push(
+            `password: expected "${vector.expectedOutput.password}", got "${result.password}"`
+          );
           passed = false;
         }
 
@@ -205,17 +213,23 @@ export class PasswordGenerator {
         const expectedDiversity = vector.expectedOutput.characterDiversity;
 
         if (actualDiversity.totalUniqueCharacters !== expectedDiversity.totalUniqueCharacters) {
-          differences.push(`totalUniqueCharacters: expected ${expectedDiversity.totalUniqueCharacters}, got ${actualDiversity.totalUniqueCharacters}`);
+          differences.push(
+            `totalUniqueCharacters: expected ${expectedDiversity.totalUniqueCharacters}, got ${actualDiversity.totalUniqueCharacters}`
+          );
           passed = false;
         }
 
         if (actualDiversity.maxRepetitions !== expectedDiversity.maxRepetitions) {
-          differences.push(`maxRepetitions: expected ${expectedDiversity.maxRepetitions}, got ${actualDiversity.maxRepetitions}`);
+          differences.push(
+            `maxRepetitions: expected ${expectedDiversity.maxRepetitions}, got ${actualDiversity.maxRepetitions}`
+          );
           passed = false;
         }
 
         if (Math.abs(actualDiversity.diversityRatio - expectedDiversity.diversityRatio) > 0.001) {
-          differences.push(`diversityRatio: expected ${expectedDiversity.diversityRatio}, got ${actualDiversity.diversityRatio}`);
+          differences.push(
+            `diversityRatio: expected ${expectedDiversity.diversityRatio}, got ${actualDiversity.diversityRatio}`
+          );
           passed = false;
         }
 
@@ -225,14 +239,13 @@ export class PasswordGenerator {
           expected: vector.expectedOutput,
           actual: {
             password: result.password,
-            characterDiversity: actualDiversity
+            characterDiversity: actualDiversity,
           },
           passed,
-          differences
+          differences,
         });
 
         if (passed) passedCount++;
-
       } catch (error) {
         results.push({
           vectorIndex: i,
@@ -243,12 +256,12 @@ export class PasswordGenerator {
             characterDiversity: {
               totalUniqueCharacters: 0,
               maxRepetitions: 0,
-              diversityRatio: 0
-            }
+              diversityRatio: 0,
+            },
           },
           passed: false,
           differences: [],
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
@@ -261,7 +274,7 @@ export class PasswordGenerator {
       testedVectors: ALGORITHM_TEST_VECTORS.length,
       passedVectors: passedCount,
       failedVectors,
-      environment
+      environment,
     };
   }
 
@@ -278,7 +291,7 @@ export class PasswordGenerator {
         keywords: testVector.input.keywords,
         length: testVector.input.length,
         options: testVector.input.options,
-        masterSalt: testVector.input.masterSalt
+        masterSalt: testVector.input.masterSalt,
       });
 
       return result.password === testVector.expectedOutput.password;
@@ -302,7 +315,7 @@ export class PasswordGenerator {
     try {
       const [hashCheck, passwordCheck] = await Promise.all([
         HashGenerator.quickCompatibilityCheck(),
-        this.quickPasswordCompatibilityCheck()
+        this.quickPasswordCompatibilityCheck(),
       ]);
 
       return {
@@ -310,7 +323,7 @@ export class PasswordGenerator {
         hashCompatibility: hashCheck,
         passwordCompatibility: passwordCheck,
         algorithmVersion: ALGORITHM_VERSION.version,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
     } catch {
       return {
@@ -318,7 +331,7 @@ export class PasswordGenerator {
         hashCompatibility: false,
         passwordCompatibility: false,
         algorithmVersion: ALGORITHM_VERSION.version,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
     }
   }
@@ -328,80 +341,81 @@ export class PasswordGenerator {
    * @param hash - Hash string to convert
    * @param length - Desired password length
    * @param options - Character type inclusion options
+   * @param characterSets - Character pools to use (defaults to module-level CHARACTER_SETS)
+   * @param distributionConfig - Length-based distribution config (defaults to module-level PASSWORD_DISTRIBUTION_CONFIG)
    * @returns Generated password with specified length and optimized distribution
    */
-  private static hashToPassword(hash: string, length: number, options: PasswordOptions): string {
+  static hashToPassword(
+    hash: string,
+    length: number,
+    options: PasswordOptions,
+    characterSets: CharacterSets = CHARACTER_SETS,
+    distributionConfig: PasswordDistributionConfig = PASSWORD_DISTRIBUTION_CONFIG
+  ): string {
     const { includeUppercase, includeLowercase, includeNumbers, includeSymbols } = options;
-    
+
     const activeSets: CharacterSet[] = [];
-    if (includeUppercase) activeSets.push({ chars: CHARACTER_SETS.UPPERCASE, type: 'uppercase' });
-    if (includeLowercase) activeSets.push({ chars: CHARACTER_SETS.LOWERCASE, type: 'lowercase' });
-    if (includeNumbers) activeSets.push({ chars: CHARACTER_SETS.NUMBERS, type: 'numbers' });
-    if (includeSymbols) activeSets.push({ chars: CHARACTER_SETS.SYMBOLS, type: 'symbols' });
-    
+    if (includeUppercase) activeSets.push({ chars: characterSets.UPPERCASE, type: 'uppercase' });
+    if (includeLowercase) activeSets.push({ chars: characterSets.LOWERCASE, type: 'lowercase' });
+    if (includeNumbers) activeSets.push({ chars: characterSets.NUMBERS, type: 'numbers' });
+    if (includeSymbols) activeSets.push({ chars: characterSets.SYMBOLS, type: 'symbols' });
+
     if (activeSets.length === 0) {
       activeSets.push(
-        { chars: CHARACTER_SETS.UPPERCASE, type: 'uppercase' },
-        { chars: CHARACTER_SETS.LOWERCASE, type: 'lowercase' },
-        { chars: CHARACTER_SETS.NUMBERS, type: 'numbers' },
-        { chars: CHARACTER_SETS.SYMBOLS, type: 'symbols' }
+        { chars: characterSets.UPPERCASE, type: 'uppercase' },
+        { chars: characterSets.LOWERCASE, type: 'lowercase' },
+        { chars: characterSets.NUMBERS, type: 'numbers' },
+        { chars: characterSets.SYMBOLS, type: 'symbols' }
       );
     }
-    
+
     const hashLength = hash.length;
     const password = new Array<string>(length);
-    const targetDistribution = this.calculateTargetDistribution(activeSets, length);
-    
-    // Calculate maximum allowed repetitions based on password length
-    const maxRepetitions = this.calculateMaxRepetitions(length);
+    const targetDistribution = this.calculateTargetDistribution(
+      activeSets,
+      length,
+      distributionConfig
+    );
+
+    const maxRepetitions = calculateMaxRepetitions(length);
     const characterUsage = new Map<string, number>();
-    
+
     let hashOffset = 0;
-    
+
     const getHashValue = (seed = 0): number => {
       const index1 = (hashOffset + seed) % hashLength;
       const index2 = (hashOffset + seed + 1) % hashLength;
       const index3 = (hashOffset + seed + 2) % hashLength;
       hashOffset = (hashOffset + 3) % hashLength;
-      
+
+      // When the three hex chars are '000' (value 0), we return 1 instead.
+      // This is algorithm-locked behaviour — changing it alters every generated password.
       return parseInt(hash[index1] + hash[index2] + hash[index3], 16) || 1;
     };
-    
-    const usedPositions = this.fillPasswordWithDistribution(
-      password, 
-      activeSets, 
-      targetDistribution, 
-      length, 
-      getHashValue,
-      characterUsage,
-      maxRepetitions
-    );
-    
-    this.fillRemainingPositions(
-      password, 
-      activeSets, 
-      usedPositions, 
-      length, 
-      getHashValue,
-      characterUsage,
-      maxRepetitions
-    );
-    
-    this.shufflePassword(password, length, getHashValue);
-    
-    return password.join('');
-  }
 
-  /**
-   * Calculate maximum allowed repetitions for a character based on password length
-   * @param length - Password length
-   * @returns Maximum number of times a character can repeat
-   */
-  private static calculateMaxRepetitions(length: number): number {
-    if (length <= 8) return 2;
-    if (length <= 16) return Math.max(2, Math.floor(length / 6));
-    if (length <= 32) return Math.max(2, Math.floor(length / 8));
-    return Math.max(3, Math.floor(length / 10));
+    const usedPositions = this.fillPasswordWithDistribution(
+      password,
+      activeSets,
+      targetDistribution,
+      length,
+      getHashValue,
+      characterUsage,
+      maxRepetitions
+    );
+
+    this.fillRemainingPositions(
+      password,
+      activeSets,
+      usedPositions,
+      length,
+      getHashValue,
+      characterUsage,
+      maxRepetitions
+    );
+
+    this.shufflePassword(password, length, getHashValue);
+
+    return password.join('');
   }
 
   /**
@@ -410,30 +424,34 @@ export class PasswordGenerator {
    * @param length - Password length
    * @returns Target distribution for each character type
    */
-  private static calculateTargetDistribution(activeSets: CharacterSet[], length: number): TargetDistribution {
+  private static calculateTargetDistribution(
+    activeSets: CharacterSet[],
+    length: number,
+    distributionConfig: PasswordDistributionConfig = PASSWORD_DISTRIBUTION_CONFIG
+  ): TargetDistribution {
     let targetDistribution: TargetDistribution = {
       uppercase: 0,
       lowercase: 0,
       numbers: 0,
-      symbols: 0
+      symbols: 0,
     };
-    
+
     if (activeSets.length === 4) {
-      if (length >= PASSWORD_DISTRIBUTION_CONFIG.long.threshold) {
-        const config = PASSWORD_DISTRIBUTION_CONFIG.long.distribution;
+      if (length >= distributionConfig.long.threshold) {
+        const config = distributionConfig.long.distribution;
         targetDistribution = {
           uppercase: Math.floor(length * config.uppercase),
           lowercase: Math.floor(length * config.lowercase),
           numbers: Math.floor(length * config.numbers),
-          symbols: Math.floor(length * config.symbols)
+          symbols: Math.floor(length * config.symbols),
         };
-      } else if (length >= PASSWORD_DISTRIBUTION_CONFIG.medium.threshold) {
-        const config = PASSWORD_DISTRIBUTION_CONFIG.medium.distribution;
+      } else if (length >= distributionConfig.medium.threshold) {
+        const config = distributionConfig.medium.distribution;
         targetDistribution = {
           uppercase: Math.floor(length * config.uppercase),
           lowercase: Math.floor(length * config.lowercase),
           numbers: Math.floor(length * config.numbers),
-          symbols: Math.floor(length * config.symbols)
+          symbols: Math.floor(length * config.symbols),
         };
       } else {
         const equalShare = Math.floor(length / 4);
@@ -441,7 +459,7 @@ export class PasswordGenerator {
           uppercase: equalShare,
           lowercase: equalShare,
           numbers: equalShare,
-          symbols: equalShare
+          symbols: equalShare,
         };
       }
     } else {
@@ -450,17 +468,20 @@ export class PasswordGenerator {
         targetDistribution[set.type] = equalShare;
       }
     }
-    
+
     const totalAllocated = Object.values(targetDistribution).reduce((a, b) => a + b, 0);
     const remainder = length - totalAllocated;
-    
+
     if (remainder > 0) {
-      const largestType = Object.keys(targetDistribution).reduce((a, b) => 
-        targetDistribution[a as keyof TargetDistribution] > targetDistribution[b as keyof TargetDistribution] ? a : b
+      const largestType = Object.keys(targetDistribution).reduce((a, b) =>
+        targetDistribution[a as keyof TargetDistribution] >
+        targetDistribution[b as keyof TargetDistribution]
+          ? a
+          : b
       ) as keyof TargetDistribution;
       targetDistribution[largestType] += remainder;
     }
-    
+
     return targetDistribution;
   }
 
@@ -476,20 +497,20 @@ export class PasswordGenerator {
    * @returns Set of filled positions
    */
   private static fillPasswordWithDistribution(
-    password: string[], 
-    activeSets: CharacterSet[], 
-    targetDistribution: TargetDistribution, 
-    length: number, 
+    password: string[],
+    activeSets: CharacterSet[],
+    targetDistribution: TargetDistribution,
+    length: number,
     getHashValue: (seed?: number) => number,
     characterUsage: Map<string, number>,
     maxRepetitions: number
   ): Set<number> {
     const usedPositions = new Set<number>();
-    
+
     for (const set of activeSets) {
       const targetCount = targetDistribution[set.type] || 0;
       const availableChars = set.chars.split('');
-      
+
       for (let i = 0; i < targetCount; i++) {
         let position: number | undefined;
         let attempts = 0;
@@ -498,7 +519,7 @@ export class PasswordGenerator {
           position = hashVal % length;
           attempts++;
         } while (usedPositions.has(position) && attempts < length * 2);
-        
+
         if (attempts >= length * 2) {
           for (let j = 0; j < length; j++) {
             if (!usedPositions.has(j)) {
@@ -507,10 +528,10 @@ export class PasswordGenerator {
             }
           }
         }
-        
+
         if (position !== undefined && !usedPositions.has(position)) {
           usedPositions.add(position);
-          
+
           // Select character with repetition control
           const selectedChar = this.selectCharacterWithRepetitionControl(
             availableChars,
@@ -519,13 +540,13 @@ export class PasswordGenerator {
             getHashValue,
             set.type.charCodeAt(0) * 2000 + i * 300
           );
-          
+
           password[position] = selectedChar;
           characterUsage.set(selectedChar, (characterUsage.get(selectedChar) || 0) + 1);
         }
       }
     }
-    
+
     return usedPositions;
   }
 
@@ -546,23 +567,23 @@ export class PasswordGenerator {
     seed: number
   ): string {
     // Filter characters that haven't reached max repetitions
-    const availableUnderLimit = availableChars.filter(char => 
-      (characterUsage.get(char) || 0) < maxRepetitions
+    const availableUnderLimit = availableChars.filter(
+      char => (characterUsage.get(char) || 0) < maxRepetitions
     );
-    
+
     // If we have characters under the limit, use them
     if (availableUnderLimit.length > 0) {
       const hashVal = getHashValue(seed);
       const charIndex = hashVal % availableUnderLimit.length;
       return availableUnderLimit[charIndex];
     }
-    
+
     // If all characters are at max repetitions, select the least used one
     const leastUsedCount = Math.min(...availableChars.map(char => characterUsage.get(char) || 0));
-    const leastUsedChars = availableChars.filter(char => 
-      (characterUsage.get(char) || 0) === leastUsedCount
+    const leastUsedChars = availableChars.filter(
+      char => (characterUsage.get(char) || 0) === leastUsedCount
     );
-    
+
     const hashVal = getHashValue(seed + 1000);
     const charIndex = hashVal % leastUsedChars.length;
     return leastUsedChars[charIndex];
@@ -579,10 +600,10 @@ export class PasswordGenerator {
    * @param maxRepetitions - Maximum allowed repetitions per character
    */
   private static fillRemainingPositions(
-    password: string[], 
-    activeSets: CharacterSet[], 
-    usedPositions: Set<number>, 
-    length: number, 
+    password: string[],
+    activeSets: CharacterSet[],
+    usedPositions: Set<number>,
+    length: number,
     getHashValue: (seed?: number) => number,
     characterUsage: Map<string, number>,
     maxRepetitions: number
@@ -594,11 +615,11 @@ export class PasswordGenerator {
           if (set.type === 'numbers' && length >= 32) return 2;
           return 1;
         });
-        
+
         const totalWeight = setWeights.reduce((a, b) => a + b, 0);
         const hashVal = getHashValue(i * 500);
         let selectedWeight = hashVal % totalWeight;
-        
+
         let selectedSet = activeSets[0];
         for (let j = 0; j < activeSets.length; j++) {
           selectedWeight -= setWeights[j];
@@ -607,7 +628,7 @@ export class PasswordGenerator {
             break;
           }
         }
-        
+
         // Select character with repetition control
         const availableChars = selectedSet.chars.split('');
         const selectedChar = this.selectCharacterWithRepetitionControl(
@@ -617,7 +638,7 @@ export class PasswordGenerator {
           getHashValue,
           i * 600
         );
-        
+
         password[i] = selectedChar;
         characterUsage.set(selectedChar, (characterUsage.get(selectedChar) || 0) + 1);
       }
@@ -631,14 +652,14 @@ export class PasswordGenerator {
    * @param getHashValue - Deterministic random value generator
    */
   private static shufflePassword(
-    password: string[], 
-    length: number, 
+    password: string[],
+    length: number,
     getHashValue: (seed?: number) => number
   ): void {
     for (let i = length - 1; i > 0; i--) {
       const hashVal = getHashValue(i * 400);
       const j = hashVal % (i + 1);
-      
+
       const temp = password[i];
       password[i] = password[j];
       password[j] = temp;
@@ -650,29 +671,25 @@ export class PasswordGenerator {
    * @param password - Generated password to analyze
    * @returns Character diversity analysis
    */
-  private static calculateCharacterDiversity(password: string): {
-    totalUniqueCharacters: number;
-    maxRepetitions: number;
-    averageRepetitions: number;
-    diversityRatio: number;
-  } {
+  private static calculateCharacterDiversity(password: string): CharacterDiversityBase {
     const charCount = new Map<string, number>();
-    
+
     for (const char of password) {
       charCount.set(char, (charCount.get(char) || 0) + 1);
     }
-    
+
     const repetitionCounts = Array.from(charCount.values());
     const totalUniqueCharacters = charCount.size;
     const maxRepetitions = Math.max(...repetitionCounts);
-    const averageRepetitions = repetitionCounts.reduce((a, b) => a + b, 0) / repetitionCounts.length;
+    const averageRepetitions =
+      repetitionCounts.reduce((a, b) => a + b, 0) / repetitionCounts.length;
     const diversityRatio = totalUniqueCharacters / password.length;
-    
+
     return {
       totalUniqueCharacters,
       maxRepetitions,
       averageRepetitions: Math.round(averageRepetitions * 100) / 100,
-      diversityRatio: Math.round(diversityRatio * 1000) / 1000
+      diversityRatio: Math.round(diversityRatio * 1000) / 1000,
     };
   }
 
@@ -681,13 +698,17 @@ export class PasswordGenerator {
    * @param options - Raw password generation options
    * @returns Normalized options with all required fields
    */
-  private static normalizeOptions(options: PasswordGenerationOptions): Required<PasswordGenerationOptions> {
+  private static normalizeOptions(
+    options: PasswordGenerationOptions
+  ): Required<PasswordGenerationOptions> {
     return {
-      keywords: options.keywords || [],
-      length: options.length || SECURITY_CONFIG.defaultPasswordLength,
+      keywords: options.keywords ?? [],
+      length: options.length ?? SECURITY_CONFIG.defaultPasswordLength,
       options: { ...DEFAULT_PASSWORD_OPTIONS, ...options.options },
-      masterSalt: options.masterSalt || SECURITY_CONFIG.masterSalt,
-      iterations: options.iterations || SECURITY_CONFIG.hashIterations
+      masterSalt: options.masterSalt ?? SECURITY_CONFIG.masterSalt,
+      iterations: options.iterations ?? SECURITY_CONFIG.hashIterations,
+      characterSets: options.characterSets ?? CHARACTER_SETS,
+      distributionConfig: options.distributionConfig ?? PASSWORD_DISTRIBUTION_CONFIG,
     };
   }
 
@@ -696,7 +717,9 @@ export class PasswordGenerator {
    * @param options - Normalized options to validate
    * @returns Validation result with error details if invalid
    */
-  private static validateGenerationOptions(options: Required<PasswordGenerationOptions>): ValidationResult {
+  private static validateGenerationOptions(
+    options: Required<PasswordGenerationOptions>
+  ): ValidationResult {
     return InputValidator.validateAllInputs(
       options.keywords,
       options.length,
@@ -720,7 +743,7 @@ export class PasswordGenerator {
       uppercase: 0,
       lowercase: 0,
       numbers: 0,
-      symbols: 0
+      symbols: 0,
     };
 
     for (const char of password) {
@@ -750,8 +773,8 @@ export class PasswordGenerator {
     } catch (error) {
       return {
         isValid: false,
-        error: error instanceof Error ? error.message : 'Unknown validation error'
+        error: error instanceof Error ? error.message : 'Unknown validation error',
       };
     }
   }
-} 
+}

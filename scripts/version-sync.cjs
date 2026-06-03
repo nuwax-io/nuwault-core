@@ -17,12 +17,19 @@ const configPath = join(rootDir, 'src', 'config.ts');
  */
 function extractAlgorithmVersion() {
   const configContent = readFileSync(configPath, 'utf8');
-  const versionMatch = configContent.match(/version:\s*['"]([^'"]+)['"],/);
-  
-  if (!versionMatch) {
-    throw new Error('Could not find algorithm version in config.ts');
+
+  // First isolate the ALGORITHM_VERSION object block to avoid false matches
+  // on other 'version:' fields (e.g. interface declarations or comments).
+  const blockMatch = configContent.match(/ALGORITHM_VERSION[^=]*=\s*\{([^}]+)\}/s);
+  if (!blockMatch) {
+    throw new Error('Could not find ALGORITHM_VERSION block in config.ts');
   }
-  
+
+  const versionMatch = blockMatch[1].match(/\bversion:\s*['"]([^'"]+)['"]/);
+  if (!versionMatch) {
+    throw new Error('Could not find version field in ALGORITHM_VERSION block');
+  }
+
   return versionMatch[1];
 }
 

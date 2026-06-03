@@ -12,7 +12,10 @@ import {
   validateAlgorithmCompatibility,
   quickCompatibilityCheck,
   validateFullAlgorithm,
-  getAlgorithmVersion
+  getAlgorithmVersion,
+  calculateMaxRepetitions,
+  INPUT_LIMITS,
+  STRENGTH_SCORE_CONFIG,
 } from '@nuwax-io/nuwault-core';
 
 import type { 
@@ -24,7 +27,8 @@ import type {
   PasswordValidationResult,
   PasswordTestResult,
   AlgorithmVersion,
-  TestVector
+  TestVector,
+  CharacterDiversityBase,
 } from '@nuwax-io/nuwault-core';
 ```
 
@@ -32,14 +36,25 @@ import type {
 
 ### Character Diversity Metadata
 
+`CharacterDiversityBase` is the shared base interface exported from the library. It is used as the type of `PasswordGenerationResult.metadata.characterDiversity` and is also extended by `CharacterDiversityMetrics` (returned by the full `PasswordAnalyzer.analyzePassword()`) which adds `repetitionScore` and `varietyScore`.
+
 ```typescript
-// Character diversity analytics metadata interface
-interface CharacterDiversityMetadata {
-  totalUniqueCharacters: number;  // Total count of unique characters in generated password
-  maxRepetitions: number;         // Maximum repetition count for any single character
-  averageRepetitions: number;     // Statistical average repetition count per character
-  diversityRatio: number;         // Character uniqueness ratio (0.0-1.0 range)
-}
+// Exported from '@nuwax-io/nuwault-core' as CharacterDiversityBase
+import type { CharacterDiversityBase } from '@nuwax-io/nuwault-core';
+
+// CharacterDiversityBase shape:
+// {
+//   totalUniqueCharacters: number;  // Total count of unique characters
+//   maxRepetitions: number;         // Maximum repetition count for any single character
+//   averageRepetitions: number;     // Statistical average repetition count per character
+//   diversityRatio: number;         // Character uniqueness ratio (0.0–1.0)
+// }
+
+// CharacterDiversityMetrics (PasswordAnalyzer) extends CharacterDiversityBase with:
+// {
+//   repetitionScore: number;  // 0–100 (100 = no excessive repetition)
+//   varietyScore: number;     // 0–100 (100 = fully diverse)
+// }
 ```
 
 ### Password Generation Result
@@ -59,7 +74,7 @@ interface PasswordGenerationResult {
       numbers: number;
       symbols: number;
     };
-    characterDiversity: CharacterDiversityMetadata;  // Advanced character diversity analytics
+    characterDiversity: CharacterDiversityBase;  // shared base diversity fields
   };
 }
 ```
@@ -142,30 +157,48 @@ interface AlgorithmVersion {
 ### Basic Password Generation with Types
 
 ```typescript
-import NuwaultCore from '@nuwax-io/nuwault-core';
-import type { PasswordGenerationResult, PasswordGenerationOptions } from '@nuwax-io/nuwault-core';
+import { PasswordGenerator } from '@nuwax-io/nuwault-core';
+import type {
+  PasswordGenerationOptions,
+  PasswordGenerationResult,
+  CharacterSets,
+  PasswordDistributionConfig,
+} from '@nuwax-io/nuwault-core';
 
-const generator = new NuwaultCore();
-
-// Type-safe password generation with comprehensive options
+// PasswordGenerationOptions is the input type for PasswordGenerator.generatePassword()
 const options: PasswordGenerationOptions = {
+  keywords: ['github.com', 'username'],
   length: 32,
-  includeUppercase: true,
-  includeLowercase: true,
-  includeNumbers: true,
-  includeSymbols: true,
-  masterSalt: 'enterprise-salt'
+  options: {
+    includeUppercase: true,
+    includeLowercase: true,
+    includeNumbers: true,
+    includeSymbols: true,
+  },
+  masterSalt: 'enterprise-salt',
+
+  // Per-call character set override (optional)
+  characterSets: {
+    UPPERCASE: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    LOWERCASE: 'abcdefghijklmnopqrstuvwxyz',
+    NUMBERS: '0123456789',
+    SYMBOLS: '!@#$%^&*',  // Restrict symbol pool
+  } satisfies CharacterSets,
+
+  // Per-call distribution override (optional)
+  distributionConfig: {
+    long:   { threshold: 64, distribution: { uppercase: 0.20, lowercase: 0.35, numbers: 0.20, symbols: 0.25 } },
+    medium: { threshold: 32, distribution: { uppercase: 0.25, lowercase: 0.35, numbers: 0.20, symbols: 0.20 } },
+    short:  { distribution: 'equal' },
+  } satisfies PasswordDistributionConfig,
 };
 
-const result: PasswordGenerationResult = await generator.generatePassword(
-  ['github.com', 'username'], 
-  options
-);
+// PasswordGenerator.generatePassword returns Promise<PasswordGenerationResult>
+const result: PasswordGenerationResult = await PasswordGenerator.generatePassword(options);
 
-// TypeScript provides comprehensive intellisense and strict type validation
 console.log(`Generated password: ${result.password}`);
-console.log(`Character diversity metrics: ${result.metadata.characterDiversity.totalUniqueCharacters}/${result.length}`);
-console.log(`Algorithm execution time: ${result.metadata.generationTime}ms`);
+console.log(`Unique chars: ${result.metadata.characterDiversity.totalUniqueCharacters}/${result.length}`);
+console.log(`Generation time: ${result.metadata.generationTime}ms`);
 ```
 
 ### Algorithm Validation with Types
@@ -238,11 +271,11 @@ const enterpriseConfig: EnterpriseConfig = {
 
 const enterpriseGenerator = new NuwaultCore(enterpriseConfig);
 
-// Type-safe enterprise password generation with organizational context
+// NuwaultCore.generatePassword() returns Promise<string> (legacy wrapper)
 async function generateEnterprisePassword(
   domain: string, 
   username: string
-): Promise<PasswordGenerationResult> {
+): Promise<string> {
   return await enterpriseGenerator.generatePassword(
     [domain, username, 'enterprise'],
     {
@@ -254,30 +287,47 @@ async function generateEnterprisePassword(
     }
   );
 }
+
+// To get the full PasswordGenerationResult with metadata, use PasswordGenerator directly:
+async function generateEnterprisePasswordWithMetadata(
+  domain: string,
+  username: string
+): Promise<PasswordGenerationResult> {
+  return await PasswordGenerator.generatePassword({
+    keywords: [domain, username, 'enterprise'],
+    length: 32,
+    masterSalt: process.env.ORG_MASTER_SALT ?? null,
+    iterations: 5000,
+  });
+}
 ```
 
 ### Advanced Type Usage
 
 ```typescript
+import { PasswordGenerator, analyzePassword } from '@nuwax-io/nuwault-core';
 import type { 
   PasswordAnalysisResult,
-  HashResult,
-  CharacterDiversityMetadata 
+  CharacterDiversityBase,
 } from '@nuwax-io/nuwault-core';
 
-// Type-safe password analysis with comprehensive metadata extraction
+// Type-safe password analysis with comprehensive metadata extraction.
+// Use PasswordGenerator.generatePassword() (not NuwaultCore) to get PasswordGenerationResult
+// with metadata. Use the module-level analyzePassword() (not NuwaultCore.analyzePassword())
+// to get PasswordAnalysisResult with strength score, entropy, and suggestions.
 async function analyzePasswordWithTypes(
   inputs: string[], 
   options: PasswordGenerationOptions
 ): Promise<{
   password: string;
   analysis: PasswordAnalysisResult;
-  diversity: CharacterDiversityMetadata;
+  diversity: CharacterDiversityBase;
 }> {
-  const generator = new NuwaultCore();
-  
-  const result: PasswordGenerationResult = await generator.generatePassword(inputs, options);
-  const analysis: PasswordAnalysisResult = generator.analyzePassword(result.password, options);
+  const result: PasswordGenerationResult = await PasswordGenerator.generatePassword({
+    ...options,
+    keywords: inputs,
+  });
+  const analysis: PasswordAnalysisResult = analyzePassword(result.password);
   
   return {
     password: result.password,

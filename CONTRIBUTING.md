@@ -118,6 +118,7 @@ When making changes, ensure:
 
 | Script | Description |
 |--------|-------------|
+| `npm run ci` | Run the full CI pipeline locally (format:check → type-check → test → build → verify:algorithm) |
 | `npm run build` | Full build (TypeScript + Rollup) |
 | `npm run build:tsc` | TypeScript compilation only |
 | `npm run build:rollup` | Rollup bundling only |
@@ -127,6 +128,9 @@ When making changes, ensure:
 | `npm run test:ui` | Run tests with UI |
 | `npm run test:coverage` | Run tests with coverage |
 | `npm run type-check` | TypeScript type checking |
+| `npm run format` | Auto-format source and test files with Prettier |
+| `npm run format:check` | Check formatting without modifying files |
+| `npm run verify:algorithm` | Verify algorithm stability against test vectors |
 | `npm run clean` | Clean build artifacts |
 
 ## Reporting Security Vulnerabilities

@@ -1,18 +1,18 @@
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-blue.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen?style=flat-square&logo=node.js)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen?style=flat-square&logo=node.js)](https://nodejs.org/)
 [![Test Coverage](https://img.shields.io/badge/coverage-vitest-green.svg?style=flat-square&logo=vitest)](https://vitest.dev/)
 [![Security](https://img.shields.io/badge/Security-SHA--512-red.svg?style=flat-square&logo=security)](SECURITY.md)
 
-> **Nuwault Core** - Enterprise-grade deterministic password generation library built with TypeScript. Transform your memorable keywords into cryptographically secure passwords with guaranteed consistency across all platforms and devices. Featuring advanced character diversity algorithms, repetition control, and balanced distribution for maximum security without compromising usability.
+**Nuwault Core** - Enterprise-grade deterministic password generation library built with TypeScript. Transform your memorable keywords into cryptographically secure passwords with guaranteed consistency across all platforms and devices. Featuring advanced character diversity algorithms, repetition control, and balanced distribution for maximum security without compromising usability.
 
 ### Key Highlights
-- **Enterprise Security**: SHA-512 cryptographic hashing with 1000+ configurable iterations, unique salt per iteration, timing attack resistance, and optional master salt support
+- **Enterprise Security**: SHA-512 cryptographic hashing with 1000+ configurable iterations, unique salt per iteration, and optional master salt support
 - **Deterministic Generation**: Same inputs always produce identical passwords across all platforms (Node.js, browsers, different OS) with test vector validation
 - **Privacy-First**: Zero data collection, works completely offline, no external dependencies, uses native Web Crypto API
 - **Performance Optimized**: Configurable hash iterations (fast: 100, secure: 1000, maximum: 5000+) for different security needs
 - **Advanced Character Analytics**: Built-in password strength analysis, entropy calculation, character diversity metrics, repetition control, and balanced distribution algorithms
-- **Cross-Platform Validated**: Node.js 16+, modern browsers (Chrome 60+, Firefox 55+, Safari 11+), Web Workers, Electron, with automated compatibility testing
+- **Cross-Platform Validated**: Node.js 22+, modern browsers (Chrome 60+, Firefox 55+, Safari 11+), Web Workers, Electron, with automated compatibility testing
 - **Developer-Friendly**: Full TypeScript support, comprehensive type definitions, intellisense, both modern and legacy JavaScript APIs
 - **Production Ready**: Algorithm stability validation, health check endpoints, regression testing, version synchronization, and deployment validation
 - **Highly Customizable**: Flexible character sets, adaptive distribution algorithms, security configurations, and password composition options
@@ -31,7 +31,7 @@
 - **CLI Tools & Scripts**: Deterministic password generation for automation, deployment scripts, and infrastructure tools
 
 ### Quality Assurance
-- **Comprehensive Testing**: 28+ test cases covering hash generation, password generation, character diversity, and cross-platform compatibility
+- **Comprehensive Testing**: 70+ test cases covering hash generation, password generation, character diversity, input validation, custom character sets, entropy calculation, repetition limits, and cross-platform compatibility
 - **Character Diversity Algorithms**: Dynamic repetition control (8-char: max 2 reps, 32-char: max 4 reps), balanced distribution, and entropy maximization
 - **Adaptive Distribution**: Length-based strategies (short: equal, medium: 25/35/20/20, long: 20/35/20/25) for optimal security
 - **Algorithm Stability**: Test vector validation across Node.js, browsers, and Electron with automated regression detection
@@ -114,24 +114,20 @@ console.log(`Library status: ${isHealthy ? 'Healthy ✅' : 'Issues detected ❌'
 ### Using Individual Functions
 
 ```javascript
-import { generatePassword, analyzeCharacterDistribution } from '@nuwax-io/nuwault-core';
+import { generatePassword, analyzePassword } from '@nuwax-io/nuwault-core';
 
-// Generate password
+// Generate password (legacy API: string[] → Promise<string>)
 const password = await generatePassword(
   ['github.com', 'user@email.com'],
   { length: 16 }
 );
 
 // Analyze password strength
-const analysis = analyzeCharacterDistribution(password, {
-  includeUppercase: true,
-  includeLowercase: true,
-  includeNumbers: true,
-  includeSymbols: true
-});
+const analysis = analyzePassword(password);
 
 console.log('Password:', password);
-console.log('Distribution quality:', analysis.distribution);
+console.log(`Strength: ${analysis.strengthLevel} (${analysis.strengthScore}/100)`);
+console.log(`Entropy: ${analysis.entropy} bits`);
 ```
 
 ## Developer Guide
@@ -155,9 +151,9 @@ const password = await generator.generatePassword(['github.com', 'username'], {
   includeSymbols: true
 });
 
-// Analyze password quality
-const analysis = generator.analyzePassword(password);
-console.log(`Password quality: ${analysis.distribution}`);
+// Analyze character distribution (returns percentages per type)
+const dist = generator.analyzePassword(password);
+console.log(`Lowercase: ${dist.lowercase}%, Symbols: ${dist.symbols}%`);
 ```
 
 ### Available Functions
@@ -187,14 +183,18 @@ import NuwaultCore from '@nuwax-io/nuwault-core';
 
 const generator = new NuwaultCore({
   SECURITY_CONFIG: {
-    hashIterations: 2000,        // More iterations = more secure but slower
-    defaultPasswordLength: 32,   // Default password length
-    minPasswordLength: 8,        // Minimum allowed length
-    maxPasswordLength: 128,      // Maximum allowed length
+    hashIterations: 2000,          // More iterations = more secure but slower
+    defaultPasswordLength: 32,     // Default password length when none specified
     masterSalt: 'your-custom-salt' // Optional master salt (null = no salt)
+    // Note: minPasswordLength / maxPasswordLength are enforced at 8 / 128 and cannot be overridden
   },
   CHARACTER_SETS: {
-    SYMBOLS: '!@#$%^&*'         // Custom symbol set
+    SYMBOLS: '!@#$%^&*'           // Restrict symbol pool to these 8 characters
+  },
+  PASSWORD_DISTRIBUTION_CONFIG: {
+    long:   { threshold: 64, distribution: { uppercase: 0.20, lowercase: 0.35, numbers: 0.20, symbols: 0.25 } },
+    medium: { threshold: 32, distribution: { uppercase: 0.25, lowercase: 0.35, numbers: 0.20, symbols: 0.20 } },
+    short:  { distribution: 'equal' }
   }
 });
 ```
@@ -203,7 +203,7 @@ const generator = new NuwaultCore({
 
 ### Core Process
 1. **Input Validation**: Validates and sanitizes input strings
-2. **Normalization**: Converts inputs to lowercase, removes diacritics
+2. **Normalization**: Trims whitespace and converts inputs to lowercase
 3. **Hash Generation**: Multiple SHA-512 iterations with unique salts
 4. **Character Distribution**: Advanced algorithms for balanced output
 5. **Deterministic Shuffle**: Consistent results across generations
@@ -222,8 +222,7 @@ The library uses sophisticated algorithms to ensure balanced character distribut
 - **Multiple Iterations**: Configurable iterations (default: 1000) prevent rainbow table attacks
 - **Unique Salt per Iteration**: Each iteration uses a unique salt combining master salt, iteration counter, and previous hash
 - **Master Salt Integration**: When provided, prepended to every iteration for unique password variants
-- **Timing Attack Prevention**: Small delays during first iteration
-- **Input Entropy Validation**: Minimum combined input length requirements
+- **Input Entropy Validation**: Minimum combined input length requirements; all-empty inputs are rejected after filtering
 
 **Salt Construction Example:**
 ```javascript
@@ -238,8 +237,8 @@ The library uses sophisticated algorithms to ensure balanced character distribut
 - **Multiple Hash Iterations**: Configurable iterations (default: 1000) to prevent rainbow table attacks
 - **Optional Master Salt**: User-provided master salt for additional security (null by default)
 - **Unique Salt per Iteration**: Each hash iteration uses a unique salt combining master salt, iteration counter, and previous hash
-- **Timing Attack Prevention**: Small delays during hash generation
-- **Input Validation**: Comprehensive validation and sanitization
+- **Input Validation**: Comprehensive validation and sanitization; empty-only inputs are rejected after filtering
+- **Hash Format Validation**: `hashToPassword` enforces 128-character hex string input
 - **Deterministic Generation**: Same inputs always produce the same password
 
 ### Algorithm Validation
@@ -266,7 +265,7 @@ console.log(`Password Generation: ${validation.passwordGeneration.isCompatible}`
 - **Future-Proof Design**: SHA-512 algorithm standardized by NIST (FIPS 180-4)
 
 ### Supported Environments
-- ✅ **Node.js 16+**: Full support with all features using Node.js crypto module
+- ✅ **Node.js 22+**: Full support with all features using Node.js crypto module
 - ✅ **Modern Browsers**: Chrome 60+, Firefox 55+, Safari 11+, Edge 79+ with Web Crypto API
 - ✅ **Web Workers**: Full support for background password generation
 - ✅ **Electron**: Compatible with all Electron versions (uses Chromium's Web Crypto API)
@@ -276,10 +275,12 @@ console.log(`Password Generation: ${validation.passwordGeneration.isCompatible}`
 
 ### Validation Commands
 ```bash
-npm test                    # Run all tests including algorithm validation
-npm run validate           # Comprehensive validation (type-check + test + version-check)
-npm run version-check      # Check algorithm/package version synchronization
-npm run prepublishOnly     # Pre-deployment validation
+npm run ci                     # Full CI pipeline locally (format:check → type-check → test → build → verify:algorithm)
+npm test                       # Run all tests including algorithm validation
+npm run validate               # Comprehensive validation (type-check + test + version-check)
+npm run version-check          # Check algorithm/package version synchronization
+npm run verify:algorithm       # Verify algorithm output against hardcoded test vectors
+npm run prepublishOnly         # Pre-deployment validation
 ```
 
 ## Production Features
@@ -330,7 +331,7 @@ if (!validation.overall.isFullyCompatible) {
 ## Browser Support
 
 - ✅ Modern browsers with Web Crypto API support
-- ✅ Node.js 16+ 
+- ✅ Node.js 22+
 - ✅ Supports ES modules and CommonJS
 - ✅ UMD build for legacy browser support
 
@@ -349,27 +350,26 @@ Full TypeScript support included with comprehensive type definitions and intelli
 ### Quick TypeScript Example
 
 ```typescript
-import NuwaultCore from '@nuwax-io/nuwault-core';
-import type { 
-  PasswordGenerationResult, 
-  CompatibilityResult,
-  AlgorithmVersion 
+import NuwaultCore, {
+  validateAlgorithmCompatibility,
+  getAlgorithmVersion,
 } from '@nuwax-io/nuwault-core';
 
-// Type-safe password generation
 const generator = new NuwaultCore();
-const result: PasswordGenerationResult = await generator.generatePassword(
+
+// NuwaultCore.generatePassword returns Promise<string>
+const password: string = await generator.generatePassword(
   ['github.com', 'username'],
   { length: 32, includeSymbols: true }
 );
 
-// Type-safe algorithm validation
-const validation: CompatibilityResult = await validateAlgorithmCompatibility();
-const version: AlgorithmVersion = getAlgorithmVersion();
+// Return types are inferred — both return complex objects
+const validation = await validateAlgorithmCompatibility();
+const versionInfo = getAlgorithmVersion();
 
-console.log(`Password: ${result.password}`);
+console.log(`Password: ${password}`);
 console.log(`Algorithm compatible: ${validation.overall.isFullyCompatible}`);
-console.log(`Version: ${version.version}`);
+console.log(`Version: ${versionInfo.version}`);
 ```
 
 **[Complete TypeScript Guide](docs/typescript-guide.md)**
@@ -405,9 +405,9 @@ const userPassword = await generator.generatePassword(
   }
 );
 
-// Password analysis
-const analysis = generator.analyzePassword(password);
-console.log(`Password quality: ${analysis.distribution}`);
+// Character distribution (percentages per type)
+const dist = generator.analyzePassword(password);
+console.log(`Lowercase: ${dist.lowercase}%, Symbols: ${dist.symbols}%`);
 
 // Algorithm validation
 import { quickCompatibilityCheck, getAlgorithmVersion } from '@nuwax-io/nuwault-core';
@@ -436,8 +436,8 @@ We take security seriously and appreciate responsible disclosure of vulnerabilit
 ### Security Overview
 - **Secure by Design**: SHA-512 hashing with multiple iterations
 - **Deterministic Generation**: Consistent, predictable outputs
-- **Input Validation**: Comprehensive validation and sanitization
-- **Timing Attack Resistance**: Protected against timing-based attacks
+- **Input Validation**: Comprehensive validation and sanitization with strict empty-input rejection
+- **Hash Format Validation**: `hashToPassword` enforces valid 128-character hex input
 - **Memory Safety**: Best-effort secure memory handling
 
 ### Reporting Vulnerabilities

@@ -28,7 +28,17 @@ Creates a new password generator instance with optional custom configuration.
       - **Effect:** When provided, adds an extra layer of security to hash generation
       - **Behavior:** Salt is included in every hash iteration for enhanced uniqueness
       - **Use Case:** Useful for creating organization-specific or user-specific password variants
-  - `CHARACTER_SETS` (object): Custom character sets
+  - `CHARACTER_SETS` (object): Custom character pools for password generation
+    - `UPPERCASE` (string): Uppercase letters (default: `'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`)
+    - `LOWERCASE` (string): Lowercase letters (default: `'abcdefghijklmnopqrstuvwxyz'`)
+    - `NUMBERS` (string): Numeric digits (default: `'0123456789'`)
+    - `SYMBOLS` (string): Symbol characters (default: `'!@#$%^&*()_+-=[]{}|;:,.<>?'`)
+  - `PASSWORD_DISTRIBUTION_CONFIG` (object): Character distribution ratios by password length
+    - `long.threshold` (number): Minimum length for the long strategy (default: `64`)
+    - `long.distribution`: Ratios for long passwords — `{ uppercase: 0.20, lowercase: 0.35, numbers: 0.20, symbols: 0.25 }`
+    - `medium.threshold` (number): Minimum length for the medium strategy (default: `32`)
+    - `medium.distribution`: Ratios for medium passwords — `{ uppercase: 0.25, lowercase: 0.35, numbers: 0.20, symbols: 0.20 }`
+    - Passwords shorter than `medium.threshold` always use equal distribution
   - `DEFAULT_PASSWORD_OPTIONS` (object): Default password options
 
 **Examples:**
@@ -52,7 +62,12 @@ const advancedGenerator = new NuwaultCore({
     masterSalt: 'organization-wide-cryptographic-salt'
   },
   CHARACTER_SETS: {
-    SYMBOLS: '!@#$%^&*'  // Custom symbol character set
+    SYMBOLS: '!@#$%^&*'  // Restrict symbol pool to 8 characters
+  },
+  PASSWORD_DISTRIBUTION_CONFIG: {
+    long:   { threshold: 64, distribution: { uppercase: 0.15, lowercase: 0.40, numbers: 0.20, symbols: 0.25 } },
+    medium: { threshold: 32, distribution: { uppercase: 0.20, lowercase: 0.40, numbers: 0.20, symbols: 0.20 } },
+    short:  { distribution: 'equal' }
   }
 });
 ```
@@ -109,10 +124,11 @@ Generate a secure, deterministic password from input keywords.
 - **Diversity Metrics**: Tracks unique character count, maximum repetitions, and average usage
 
 **Throws:**
-- `Error` - If no inputs provided: `"No inputs provided for hash generation"`
-- `Error` - If all inputs are empty: `"All inputs are empty or invalid"`
-- `Error` - If combined input too short: `"Combined inputs too short (minimum 3 characters required)"`
-- `Error` - If length out of range: `"Password length must be between 8 and 128 characters"`
+- `Error` - If no keywords provided: `"At least one keyword is required"`
+- `Error` - If a keyword is empty: `"Keyword at index N cannot be empty or contain only whitespace"`
+- `Error` - If a keyword exceeds 1000 characters: `"Keyword at index N exceeds maximum length of 1000 characters"`
+- `Error` - If length out of range: `"Password length must be at least 8 characters"` / `"Password length cannot exceed 128 characters"`
+- `Error` - If all character types disabled: `"At least one character type must be enabled"`
 
 **Character Distribution Logic:**
 - **Adaptive Algorithm:** Distribution strategy changes based on password length
@@ -162,94 +178,29 @@ const saltedPassword = await generator.generatePassword(
 );
 ```
 
-**`analyzePassword(password, options?)`**
+**`analyzePassword(password, _options?)`**
 
-Analyze character distribution and quality of a password.
+Analyze character type distribution in a password.
 
 **Parameters:**
 - `password` (string): Password to analyze
-  - **Accepts:** Any string (not limited to generated passwords)
-  - **Processing:** Counts each character type and calculates distribution
-- `options` (object, optional): Analysis configuration options
-  - `includeUppercase` (boolean, optional): Whether uppercase letters should be counted
-    - **Default:** `true` (assumes uppercase characters are part of expected password composition)
-    - **Effect:** Influences expected percentage calculations and quality scoring algorithms
-  - `includeLowercase` (boolean, optional): Whether lowercase letters should be counted  
-    - **Default:** `true`
-    - **Effect:** Influences distribution quality assessment
-  - `includeNumbers` (boolean, optional): Whether numbers should be counted
-    - **Default:** `true`
-    - **Effect:** Used for expected distribution calculations
-  - `includeSymbols` (boolean, optional): Whether symbols should be counted
-    - **Default:** `true`
-    - **Effect:** Affects quality scoring and expected percentages
+- `_options` (**deprecated**, optional): Accepted for backward compatibility but has no effect. Use the standalone `analyzePassword()` export for full strength analysis.
 
-**Returns:** `object` - Detailed analysis results
-- `length` (number): Total password length
-- `uppercase` (object): Uppercase letter statistics
-  - `count` (number): Number of uppercase letters found
-  - `chars` (Set): Set of unique uppercase characters used
-  - `percentage` (number): Percentage of password that is uppercase (rounded)
-- `lowercase` (object): Lowercase letter statistics
-  - `count` (number): Number of lowercase letters found
-  - `chars` (Set): Set of unique lowercase characters used  
-  - `percentage` (number): Percentage of password that is lowercase (rounded)
-- `numbers` (object): Numeric digit statistics
-  - `count` (number): Number of digits found
-  - `chars` (Set): Set of unique digits used
-  - `percentage` (number): Percentage of password that is numbers (rounded)
-- `symbols` (object): Symbol character statistics
-  - `count` (number): Number of symbols found
-  - `chars` (Set): Set of unique symbols used
-  - `percentage` (number): Percentage of password that is symbols (rounded)
-- `distribution` (string): Overall quality rating
-  - **'excellent'** (score ≥85): Well-balanced distribution, good variety
-  - **'good'** (score 70-84): Acceptable distribution with minor issues
-  - **'fair'** (score 50-69): Noticeable distribution problems
-  - **'poor'** (score <50): Significant distribution or variety issues
-- `details` (string[]): Specific issues found during analysis
-  - **Distribution Issues:** Character type percentages outside expected ranges
-  - **Variety Issues:** Low character variety within character types
+**Returns:** `CharacterDistribution` — percentage share of each character type (rounded to 2 decimal places)
+- `uppercase` (number): Percentage of uppercase letters (e.g., `25.0`)
+- `lowercase` (number): Percentage of lowercase letters
+- `numbers` (number): Percentage of numeric digits
+- `symbols` (number): Percentage of symbol characters
 
-**Quality Scoring Algorithm:**
-- **Base Score:** 100 points
-- **Distribution Penalty:** -2 points per percentage point beyond tolerance
-  - Tolerance: ±10% for passwords ≥32 chars, ±15% for shorter passwords
-- **Variety Penalty:** -10 points for poor character variety within types
-  - Triggered when variety ratio <0.7 and character count >5
+> For comprehensive analysis including strength score, entropy, repetition patterns, and improvement suggestions, use the standalone `analyzePassword()` function.
 
 **Examples:**
 ```javascript
-// Comprehensive password quality analysis
-const analysis = generator.analyzePassword('MyP@ssw0rd123!', {
-  includeUppercase: true,
-  includeLowercase: true, 
-  includeNumbers: true,
-  includeSymbols: true
-});
-
-console.log(`Password Length: ${analysis.length}`);
-console.log(`Quality Rating: ${analysis.distribution}`);
-console.log(`Character Distribution Analysis:`);
-console.log(`  Uppercase: ${analysis.uppercase.count} (${analysis.uppercase.percentage}%)`);
-console.log(`  Lowercase: ${analysis.lowercase.count} (${analysis.lowercase.percentage}%)`);
-console.log(`  Numbers: ${analysis.numbers.count} (${analysis.numbers.percentage}%)`);
-console.log(`  Symbols: ${analysis.symbols.count} (${analysis.symbols.percentage}%)`);
-
-// Distribution quality issue detection
-if (analysis.details.length > 0) {
-  console.log('Quality Issues Detected:');
-  analysis.details.forEach(detail => console.log(`  - ${detail}`));
-}
-
-// Single character type analysis validation
-const numbersOnlyAnalysis = generator.analyzePassword('123456789', {
-  includeUppercase: false,
-  includeLowercase: false,
-  includeNumbers: true,
-  includeSymbols: false
-});
-console.log(`Numeric-only password quality: ${numbersOnlyAnalysis.distribution}`);
+const dist = generator.analyzePassword('MyP@ssw0rd123!');
+console.log(`Uppercase: ${dist.uppercase}%`);
+console.log(`Lowercase: ${dist.lowercase}%`);
+console.log(`Numbers:   ${dist.numbers}%`);
+console.log(`Symbols:   ${dist.symbols}%`);
 ```
 
 ## Core Functions
@@ -260,36 +211,58 @@ All functions are available as individual exports for advanced usage:
 import {
   // Core password generation functions
   generatePassword,
+  generatePasswordLegacy,
   generateHash,
   hashToPassword,
+  analyzePassword,
   analyzeCharacterDistribution,
   normalizeInput,
-  
+
   // Algorithm compatibility validation functions
   validateAlgorithmCompatibility,
   quickCompatibilityCheck,
   validateFullAlgorithm,
   getAlgorithmVersion,
-  
+
   // Security and configuration constants
   SECURITY_CONFIG,
   CHARACTER_SETS,
   DEFAULT_PASSWORD_OPTIONS,
   ALGORITHM_VERSION,
   ALGORITHM_TEST_VECTORS,
-  
-  // Environment and utility functions
-  isDevelopment,
-  isProduction,
-  mergeConfig
+  INPUT_LIMITS,
+  STRENGTH_SCORE_CONFIG,
+
+  // Utility functions
+  mergeConfig,
+  calculateMaxRepetitions,
 } from '@nuwax-io/nuwault-core';
 ```
 
 ### Core Functions Reference
 
-**`generatePassword(inputs, options?)`**
+**`generatePassword(inputs, options?)`** — Legacy API
 
-Standalone password generation function (same as class method).
+Generates a password from a keyword array and returns `Promise<string>`. Same behaviour as `NuwaultCore.generatePassword()`.
+
+**`generatePassword(options)`** — Object API
+
+Generates a password via `PasswordGenerator.generatePassword()` and returns `Promise<PasswordGenerationResult>` with full metadata. Accepts the complete `PasswordGenerationOptions` interface, including the two per-call overrides added in the latest release:
+
+- `characterSets` (`CharacterSets`, optional): Override the character pools for this call only. Falls back to the module-level `CHARACTER_SETS` constant.
+- `distributionConfig` (`PasswordDistributionConfig`, optional): Override the length-based distribution ratios for this call only. Falls back to the module-level `PASSWORD_DISTRIBUTION_CONFIG` constant.
+
+```javascript
+import { generatePassword } from '@nuwax-io/nuwault-core';
+
+// Per-call character set override (object API)
+const result = await generatePassword({
+  keywords: ['github.com', 'user@email.com'],
+  length: 24,
+  characterSets: { SYMBOLS: '!@#$%^&*' },
+});
+console.log(result.password);
+```
 
 **`generateHash(inputs, masterSalt?)`**
 
@@ -306,18 +279,17 @@ Generate a cryptographic hash from input strings using SHA-512 with multiple ite
 
 **Throws:**
 - `Error` - If no inputs provided
-- `Error` - If all inputs are empty
-- `Error` - If combined input length is too short (< 3 characters)
+- `Error` - If all inputs are empty or whitespace-only
 
 **`hashToPassword(hash, options)`**
 
 Convert a cryptographic hash to a password with specified character distribution.
 
 **Parameters:**
-- `hash` (string): Input hash string
-  - **Typical Format:** 128-character hexadecimal string (from SHA-512)
-  - **Accepts:** Any string, but longer hashes provide better entropy
-  - **Usage:** Provides deterministic randomness for character selection
+- `hash` (string): 128-character SHA-512 hex string (required)
+  - **Format:** Exactly 128 hexadecimal characters (`[0-9a-fA-F]{128}`) — upper and lowercase accepted; internally normalised to lowercase
+  - **Source:** Must be the output of `generateHash()` or an equivalent SHA-512 hash
+  - **Validation:** Throws if the value is not a valid 128-character hex string
 - `options` (object): Password generation options (required)
   - `length` (number): Desired password length
     - **Range:** Any positive integer (typically 8-128)
@@ -337,6 +309,11 @@ Convert a cryptographic hash to a password with specified character distribution
 
 **Returns:** `string` - Generated password with specified length and character distribution
 
+**Throws:**
+- `Error` - If hash is not a valid 128-character hex string: `"Hash must be a valid 128-character SHA-512 hex string"`
+- `Error` - If length is outside the 8–128 range
+- `Error` - If all character types are disabled
+
 **Algorithm Details:**
 - **Deterministic:** Same hash + options always produce identical password
 - **Distribution Strategy:** Adaptive algorithm based on password length:
@@ -351,6 +328,7 @@ Convert a cryptographic hash to a password with specified character distribution
 import { hashToPassword } from '@nuwax-io/nuwault-core';
 
 // Standard password generation from cryptographic hash
+// hash must be exactly 128 hex characters — use generateHash() to obtain it
 const hash = 'a1b2c3d4e5f6...'; // 128-character SHA-512 hash from generateHash()
 const password = hashToPassword(hash, {
   length: 16,
@@ -375,13 +353,70 @@ const long = hashToPassword(hash, { length: 64, includeUppercase: true, includeL
 // Note: Longer passwords prioritize symbols and numbers for enhanced security
 ```
 
-**`analyzeCharacterDistribution(password, options?)`**
+**`analyzePassword(password)`**
 
-Analyze character distribution in a password (same as class method).
+Comprehensive password strength analysis. Unlike `NuwaultCore.analyzePassword()` which returns only percentages, this standalone function returns full security metrics.
+
+**Parameters:**
+- `password` (string): Password to analyze
+
+**Returns:** `PasswordAnalysisResult`
+- `length` (number): Total password length
+- `characterCounts` (object): Raw counts — `{ uppercase, lowercase, numbers, symbols, total }`
+- `characterDistribution` (object): Percentage of each type — `{ uppercase, lowercase, numbers, symbols }`
+- `characterDiversity` (object): Diversity metrics
+  - `totalUniqueCharacters` (number): Count of unique characters
+  - `maxRepetitions` (number): Highest repetition count for any single character
+  - `averageRepetitions` (number): Average repetitions per character
+  - `diversityRatio` (number): Unique chars / total length
+  - `repetitionScore` (number): 0–100 (100 = no excessive repetition)
+  - `varietyScore` (number): 0–100 (100 = fully diverse)
+- `repetitionAnalysis` (object): Repetition pattern details
+  - `hasExcessiveRepetition` (boolean)
+  - `maxAllowedRepetitions` (number): Length-based threshold
+  - `repetitionViolations` (array): Characters exceeding the threshold
+  - `repetitionQuality` (`'Excellent' | 'Good' | 'Fair' | 'Poor'`)
+- `strengthScore` (number): 0–100 composite score
+- `strengthLevel` (`'Very Weak' | 'Weak' | 'Fair' | 'Good' | 'Strong' | 'Very Strong'`)
+- `entropy` (number): Shannon entropy in bits per character
+- `hasSequentialChars` (boolean): True if 3+ sequential characters found (e.g., `abc`, `123`)
+- `hasRepeatedChars` (boolean): True if adjacent identical characters found (e.g., `aa`)
+- `suggestions` (string[]): Actionable improvement recommendations
+
+**Strength level thresholds:**
+| Score | Level |
+|-------|-------|
+| ≥90 | Very Strong |
+| ≥75 | Strong |
+| ≥60 | Good |
+| ≥45 | Fair |
+| ≥25 | Weak |
+| <25 | Very Weak |
+
+**Examples:**
+```javascript
+import { analyzePassword } from '@nuwax-io/nuwault-core';
+
+const analysis = analyzePassword('MyP@ssw0rd123!');
+
+console.log(`Strength: ${analysis.strengthLevel} (${analysis.strengthScore}/100)`);
+console.log(`Entropy:  ${analysis.entropy} bits`);
+console.log(`Unique chars: ${analysis.characterDiversity.totalUniqueCharacters}`);
+console.log(`Repetition quality: ${analysis.repetitionAnalysis.repetitionQuality}`);
+
+if (analysis.suggestions.length > 0) {
+  console.log('Suggestions:');
+  analysis.suggestions.forEach(s => console.log(`  - ${s}`));
+}
+```
+
+**`analyzeCharacterDistribution(password)`**
+
+Returns only the percentage distribution of character types. Equivalent to `NuwaultCore.analyzePassword()`.
 
 **`normalizeInput(text)`**
 
-Normalize input text by trimming, converting to lowercase, and removing diacritics.
+Normalize input text by trimming whitespace and converting to lowercase. Diacritics are **not** removed.
 
 **Parameters:**
 - `text` (string): Input text to normalize
@@ -391,8 +426,8 @@ Normalize input text by trimming, converting to lowercase, and removing diacriti
 **Examples:**
 ```javascript
 normalizeInput('  GitHub.COM  '); // Output: 'github.com'
-normalizeInput('Café'); // Output: 'cafe'
-normalizeInput('ÉXAMPLE.org'); // Output: 'example.org'
+normalizeInput('Café');           // Output: 'café'  (diacritics preserved)
+normalizeInput('ÉXAMPLE.org');    // Output: 'éxample.org'
 ```
 
 ### Algorithm Validation Functions
@@ -649,7 +684,54 @@ Default options for password generation.
 }
 ```
 
+**`INPUT_LIMITS`**
+
+Maximum allowed lengths for user-supplied inputs. Enforced by `InputValidator` to prevent memory exhaustion from extremely large strings.
+
+```javascript
+{
+  maxKeywordLength: 1000,      // Per-keyword character limit
+  maxMasterSaltLength: 1000    // masterSalt character limit
+}
+```
+
+**`STRENGTH_SCORE_CONFIG`**
+
+Named constants for all weights, multipliers, and thresholds used by `PasswordAnalyzer.calculateStrengthScore()`. Each of the five score components (length, variety, entropy, diversity, balance) has a maximum of `maxComponentScore` (20), totalling 100.
+
+```javascript
+{
+  maxComponentScore: 20,
+  lengthMultiplier: 1.5,
+  entropyMultiplier: 4,
+  diversityVarietyWeight: 0.6,
+  diversityRepetitionWeight: 0.4,
+  diversityScoreNormalizer: 0.2,
+  minRepetitionScoreForPenalty: 80,
+  repetitionPenaltyFactor: 0.1,
+  minDiversityRatio: 0.6,
+  sequentialCharPenalty: 5,
+  repeatedCharPenalty: 3,
+  commonPatternPenalty: 10,
+  minRecommendedLength: 12,
+  minVarietyScore: 70
+}
+```
+
 ## Utility Functions
+
+**`calculateMaxRepetitions(length)`**
+
+Returns the maximum number of times any single character may appear in a password of the given length. Used internally by both `PasswordGenerator` and `PasswordAnalyzer` to enforce identical repetition limits.
+
+```javascript
+calculateMaxRepetitions(8)   // → 2
+calculateMaxRepetitions(16)  // → 2
+calculateMaxRepetitions(24)  // → 3
+calculateMaxRepetitions(32)  // → 4
+calculateMaxRepetitions(64)  // → 6
+calculateMaxRepetitions(128) // → 12
+```
 
 **`mergeConfig(customConfig)`**
 
@@ -660,6 +742,3 @@ Merge custom configuration with default settings.
 
 **Returns:** `object` - Merged configuration
 
-**`isDevelopment()` / `isProduction()`**
-
-Environment detection utility functions for runtime environment identification. These functions return static boolean values (false/true respectively) in the current library implementation. 
