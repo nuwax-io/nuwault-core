@@ -115,14 +115,14 @@ jobs:
 
       # ── Validate and build BEFORE committing ─────────────────────────
       # If any step below fails, nothing is pushed to main and no tag is created.
+      - name: Build
+        run: npm run build
+
       - name: Validate (type-check + tests + version-sync)
         run: npm run validate
 
       - name: Verify algorithm stability
         run: npm run verify:algorithm
-
-      - name: Build
-        run: npm run build
 
       # ── Commit, tag and push ──────────────────────────────────────────
       - name: Commit, tag and push
