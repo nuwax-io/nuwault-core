@@ -146,6 +146,7 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.next }}
           body_path: /tmp/release-notes.md
+          generate_release_notes: true
           files: |
             dist/index.js
             dist/index.cjs
