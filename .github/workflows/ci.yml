@@ -39,11 +39,11 @@ jobs:
       - name: Type check
         run: npm run type-check
 
-      - name: Run tests
-        run: npm run test
-
       - name: Build
         run: npm run build
+
+      - name: Run tests
+        run: npm run test
 
       - name: Verify algorithm stability
         run: npm run verify:algorithm
